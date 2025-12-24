@@ -52,5 +52,4 @@ yarn-error.log*
 .cache/
 *.pem
 /apps/mobile/node_modules/
-/apps/mobile/node_modules/
-/apps/mobile/node_modules/
+/apps/api/.wrangler/
