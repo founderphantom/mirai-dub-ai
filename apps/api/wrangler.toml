@@ -1,0 +1,53 @@
+name = "mirai-dub-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "development"
+API_BASE_URL = "https://mirai-dub-api.founder-968.workers.dev"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "mirai-db"
+database_id = "d1430981-3129-47fc-8f93-4fc2696de239"
+migrations_dir = "src/db/migrations"
+
+# R2 Storage Bucket
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "mirai-videos"
+
+# KV Namespace for rate limiting and session cache
+[[kv_namespaces]]
+binding = "KV"
+id = "67dfaf94bc3242efaba83893369f8efe"
+
+# Queue Producer
+[[queues.producers]]
+binding = "VIDEO_QUEUE"
+queue = "video-processing"
+
+# Queue Consumer
+[[queues.consumers]]
+queue = "video-processing"
+max_batch_size = 1
+max_batch_timeout = 30
+max_retries = 3
+# dead_letter_queue = "video-processing-dlq"  # Optional: uncomment if you want failed messages captured
+
+# Production environment
+[env.production]
+vars = { ENVIRONMENT = "production", API_BASE_URL = "https://api.miraidub.ai" }
+
+# Secrets (set via `wrangler secret put <NAME>`)
+# BETTER_AUTH_SECRET
+# POLAR_ACCESS_TOKEN
+# POLAR_WEBHOOK_SECRET
+# REPLICATE_API_TOKEN
+# R2_PUBLIC_URL
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# APPLE_CLIENT_ID
+# APPLE_CLIENT_SECRET
