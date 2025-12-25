@@ -67,18 +67,20 @@ export default function VideoDetailScreen() {
 
     try {
       setIsDownloading(true);
-      const { url } = await videosApi.getDownloadUrl(id);
 
-      // Open the download URL in browser
-      const supported = await Linking.canOpenURL(url);
+      // Get signed download URL from API
+      const { url: downloadUrl } = await videosApi.getDownloadUrl(id);
+
+      // Open the signed download URL in browser
+      const supported = await Linking.canOpenURL(downloadUrl);
       if (supported) {
-        await Linking.openURL(url);
+        await Linking.openURL(downloadUrl);
       } else {
         Alert.alert("Error", "Unable to open download link");
       }
     } catch (error) {
       console.error("Download failed:", error);
-      Alert.alert("Download Failed", "Unable to get download link. Please try again.");
+      Alert.alert("Download Failed", "Unable to download video. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -88,12 +90,15 @@ export default function VideoDetailScreen() {
     if (!video || !id) return;
 
     try {
-      const { url } = await videosApi.getDownloadUrl(id);
+      // Construct download URL directly
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://mirai-dub-api.founder-968.workers.dev';
+      const downloadUrl = `${API_URL}/api/videos/${id}/download`;
+
       // Use React Native's Share API
       const { Share } = await import("react-native");
       await Share.share({
         message: `Check out my translated video: ${video.title}`,
-        url,
+        url: downloadUrl,
       });
     } catch (error) {
       console.error("Share failed:", error);

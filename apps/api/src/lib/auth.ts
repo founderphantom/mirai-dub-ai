@@ -90,13 +90,19 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
                 // Debug: Log when hook is triggered
                 console.log("[Better Auth Hook] Creating user:", user.id, user.email);
 
+                // Detect if user is anonymous based on email domain or explicit flag
+                const isAnonymous = user.isAnonymous ?? user.email?.endsWith("@anonymous.miraidub.ai") ?? true;
+
+                // Grant 2 bonus videos if not anonymous
+                const initialBonus = !isAnonymous ? 2 : 0;
+
                 // Ensure custom fields have defaults for all user types (anonymous, email, OAuth)
                 const userData = {
                   ...user,
                   // Custom fields with defaults (only set if not already provided)
-                  isAnonymous: user.isAnonymous ?? true,
+                  isAnonymous,
                   trialVideosUsed: user.trialVideosUsed ?? 0,
-                  bonusVideosAvailable: user.bonusVideosAvailable ?? 0,
+                  bonusVideosAvailable: user.bonusVideosAvailable ?? initialBonus,
                   creditsBalance: user.creditsBalance ?? 0,
                   plan: user.plan ?? "free",
                 };

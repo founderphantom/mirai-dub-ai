@@ -1,7 +1,8 @@
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Sparkles, Globe, Zap, Shield, Upload, Languages, Cpu, Download, Play } from "lucide-react-native";
+import { Sparkles, Globe, Zap, Shield, Upload, Languages, Cpu, Download, Play, User as UserIcon } from "lucide-react-native";
+import { useSession } from "@/lib/api/auth";
 
 // Feature card data
 const features = [
@@ -57,9 +58,36 @@ const steps = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const user = session?.user;
+  const isSignedIn = user && !user.isAnonymous;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      {/* Header */}
+      <View className="flex-row justify-between items-center px-4 py-3 border-b border-neutral-100 bg-white">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 bg-primary-500 rounded-lg items-center justify-center mr-2">
+            <Sparkles size={18} color="white" />
+          </View>
+          <Text className="text-lg font-bold text-neutral-900">Mirai Dub AI</Text>
+        </View>
+        <Pressable
+          onPress={() => {
+            if (isSignedIn) {
+              router.push("/account");
+            } else {
+              router.push("/(auth)/login");
+            }
+          }}
+          className="flex-row items-center bg-primary-50 active:bg-primary-100 px-3 py-2 rounded-full"
+        >
+          <UserIcon size={16} color="#2563eb" className="mr-1.5" />
+          <Text className="text-primary-600 font-semibold text-sm">
+            {isSignedIn ? "Account" : "Sign In"}
+          </Text>
+        </Pressable>
+      </View>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}

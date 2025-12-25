@@ -15,29 +15,44 @@ export const videoStatuses = [
 export type VideoStatus = (typeof videoStatuses)[number];
 
 /**
- * Supported languages
+ * Supported languages - Comprehensive list matching HeyGen API
  */
 export const supportedLanguages = [
   "auto",
-  "en",
-  "es",
-  "fr",
-  "de",
-  "it",
-  "pt",
-  "ja",
-  "zh",
-  "ko",
-  "ar",
-  "hi",
-  "ru",
-  "nl",
-  "pl",
-  "tr",
-  "vi",
-  "th",
-  "id",
-  "sv",
+  // Popular Languages (General)
+  "en", "es", "fr", "hi", "it", "de", "pl", "pt", "zh", "ja", "nl", "tr", "ko",
+  "da", "ar", "ro", "zh-CN", "fil", "sv", "id", "uk", "el", "cs", "bg", "ms",
+  "sk", "hr", "ta", "fi", "ru",
+  // Regional Variants
+  "af-ZA", "sq-AL", "am-ET",
+  "ar-DZ", "ar-BH", "ar-EG", "ar-IQ", "ar-JO", "ar-KW", "ar-LB", "ar-LY",
+  "ar-MA", "ar-OM", "ar-QA", "ar-SA", "ar-SY", "ar-TN", "ar-AE", "ar-YE",
+  "hy-AM", "az-AZ", "bn-BD", "bn-IN", "eu", "bs-BA", "bg-BG", "my-MM", "ca",
+  "zh-HK", "zh-CN-shandong", "zh-CN-mandarin", "zh-CN-liaoning", "zh-CN-sichuan",
+  "zh-TW", "zh-CN-shanghai", "zh-CN-henan", "zh-CN-shaanxi",
+  "hr-HR", "cs-CZ", "da-DK", "nl-BE", "nl-NL",
+  "en-AU", "en-CA", "en-HK", "en-IN", "en-IE", "en-KE", "en-NZ", "en-NG",
+  "en-PH", "en-SG", "en-ZA", "en-TZ", "en-GB", "en-US",
+  "et-EE", "fil-PH", "fi-FI",
+  "fr-BE", "fr-CA", "fr-FR", "fr-CH",
+  "gl", "ka-GE",
+  "de-AT", "de-DE", "de-CH",
+  "el-GR", "gu-IN", "he-IL", "hi-IN", "hu-HU", "is-IS", "id-ID", "ga-IE",
+  "it-IT", "ja-JP", "jv-ID", "kn-IN", "kk-KZ", "km-KH", "ko-KR", "lo-LA",
+  "lv-LV", "lt-LT", "mk-MK", "ms-MY", "ml-IN", "mt-MT", "mr-IN", "mn-MN",
+  "ne-NP", "nb-NO", "ps-AF", "fa-IR", "pl-PL",
+  "pt-BR", "pt-PT",
+  "ro-RO", "ru-RU", "sr-RS", "si-LK", "sk-SK", "sl-SI", "so-SO",
+  "es-AR", "es-BO", "es-CL", "es-CO", "es-CR", "es-CU", "es-DO", "es-EC",
+  "es-SV", "es-GQ", "es-GT", "es-HN", "es-MX", "es-NI", "es-PA", "es-PY",
+  "es-PE", "es-PR", "es-ES", "es-US", "es-UY", "es-VE",
+  "su-ID", "sw-KE", "sw-TZ", "sv-SE",
+  "ta-IN", "ta-MY", "ta-SG", "ta-LK",
+  "te-IN", "th-TH", "tr-TR", "uk-UA",
+  "ur-IN", "ur-PK",
+  "uz-UZ", "vi-VN", "cy-GB", "zu-ZA",
+  // Special Variants
+  "en-accent", "en-US-accent",
 ] as const;
 export type LanguageCode = (typeof supportedLanguages)[number];
 

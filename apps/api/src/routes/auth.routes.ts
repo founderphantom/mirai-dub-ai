@@ -11,15 +11,6 @@ import { convertAccountSchema } from "../validators/schemas";
 export const authRoutes = new Hono<HonoEnv>();
 
 /**
- * Forward all Better Auth routes
- * Handles: sign-in, sign-up, sign-out, session, etc.
- */
-authRoutes.all("/*", async (c) => {
-  const auth = createAuth(c.env, c.req.raw.cf);
-  return auth.handler(c.req.raw);
-});
-
-/**
  * GET /api/auth/me
  * Get current user with extended info (credits, plan, etc.)
  */
@@ -138,3 +129,13 @@ authRoutes.post(
     }
   }
 );
+
+/**
+ * Forward all Better Auth routes
+ * Handles: sign-in, sign-up, sign-out, session, etc.
+ * MUST BE LAST to avoid shadowing specific routes
+ */
+authRoutes.all("/*", async (c) => {
+  const auth = createAuth(c.env, c.req.raw.cf);
+  return auth.handler(c.req.raw);
+});

@@ -148,7 +148,9 @@ export function useConvertAccount() {
       // Use the backend's convert endpoint
       return apiClient.post<{ user: unknown }>("/api/auth/convert", data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Force refresh the session in better-auth to update client state (isAnonymous: false)
+      await authClient.getSession();
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
       router.replace("/home");
     },

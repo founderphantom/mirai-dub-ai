@@ -62,6 +62,13 @@ export default function RootLayout() {
                   animation: "slide_from_right",
                 }}
               />
+              <Stack.Screen
+                name="account"
+                options={{
+                  presentation: "card",
+                  animation: "slide_from_right",
+                }}
+              />
               <Stack.Screen name="+not-found" />
             </Stack>
           </ToastProvider>

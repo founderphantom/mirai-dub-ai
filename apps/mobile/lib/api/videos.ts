@@ -47,9 +47,9 @@ export const videosApi = {
   },
 
   /**
-   * Get download URL for translated video
+   * Get signed download URL for translated video
    */
   async getDownloadUrl(id: string): Promise<{ url: string; expiresAt: string }> {
-    return apiClient.get<{ url: string; expiresAt: string }>(`/api/videos/${id}/download`);
+    return apiClient.get<{ url: string; expiresAt: string }>(`/api/videos/${id}/download-url`);
   },
 };

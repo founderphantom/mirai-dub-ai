@@ -18,7 +18,7 @@ export const uploadInitiateSchema = z.object({
     "video/webm",
     "video/x-msvideo",
   ]),
-  sourceLanguage: languageCodeSchema,
+  sourceLanguage: languageCodeSchema.optional(), // Optional for auto-detect
   targetLanguage: languageCodeSchema,
   title: z.string().min(1).max(255).optional(),
   durationSeconds: z.number().positive().max(3600).optional(), // 60 min max

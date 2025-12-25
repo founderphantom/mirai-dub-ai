@@ -41,6 +41,13 @@ max_retries = 3
 [env.production]
 vars = { ENVIRONMENT = "production", API_BASE_URL = "https://api.miraidub.ai" }
 
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
 # Secrets (set via `wrangler secret put <NAME>`)
 # BETTER_AUTH_SECRET
 # POLAR_ACCESS_TOKEN

@@ -35,10 +35,26 @@ uploadRoutes.use("*", requireAuth);
  */
 uploadRoutes.post(
   "/initiate",
-  zValidator("json", uploadInitiateSchema),
   async (c) => {
     const user = c.get("user")!;
-    const data = c.req.valid("json");
+
+    // Log incoming request body for debugging
+    const body = await c.req.json();
+    console.log("Upload initiate request body:", JSON.stringify(body, null, 2));
+
+    // Validate
+    const result = uploadInitiateSchema.safeParse(body);
+    if (!result.success) {
+      console.error("Validation failed:", JSON.stringify(result.error.flatten(), null, 2));
+      return c.json(
+        formatErrorResponse(
+          createError(ErrorCodes.VALIDATION_ERROR, result.error.flatten())
+        ),
+        400
+      );
+    }
+
+    const data = result.data;
     const db = createDb(c.env.DB);
 
     try {
@@ -72,6 +88,23 @@ uploadRoutes.post(
           hasBonus,
         });
         return c.json(formatErrorResponse(error), error.statusCode);
+      }
+
+      // Enforce 1-minute limit for free videos (using trial or bonus)
+      // Only skip this check if the user is paying with credits (hasCredits is true AND they have enough credits)
+      // Note: We prioritize using free resources, but they come with limits.
+      // If user has credits but also free resources, we might want to let them use credits for longer videos?
+      // Logic: If the video is > 1 min, they MUST use credits.
+      if (estimatedMinutes > 1) {
+        if (!hasCredits) {
+          const error = createError(
+            ErrorCodes.INVALID_REQUEST,
+            undefined,
+            "Free videos are limited to 1 minute. Please upgrade to process longer videos."
+          );
+          return c.json(formatErrorResponse(error), error.statusCode);
+        }
+        // If they have credits, we'll use credits naturally in the processing step (or deduction logic)
       }
 
       // Check file size limit

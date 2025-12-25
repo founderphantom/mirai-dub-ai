@@ -12,8 +12,10 @@ export default function SignupScreen() {
     signUpEmail,
     signInGoogle,
     signInApple,
+    convertAccount,
     isSigningUp,
     isSigningIn,
+    isAnonymous,
   } = useAuth();
 
   const isLoading = isSigningUp || isSigningIn;
@@ -85,7 +87,12 @@ export default function SignupScreen() {
     if (!validateForm()) return;
 
     try {
-      await signUpEmail({ name, email, password });
+      if (isAnonymous) {
+        // If user is anonymous, we want to convert their account instead of creating a new one
+        await convertAccount({ name, email, password });
+      } else {
+        await signUpEmail({ name, email, password });
+      }
       // Navigation is handled in the hook
     } catch (error: unknown) {
       const errorCode = (error as { code?: string })?.code;
@@ -160,9 +167,8 @@ export default function SignupScreen() {
           <View className="mb-4">
             <Text className="text-neutral-700 font-medium mb-2">Full Name</Text>
             <View
-              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${
-                errors.name ? "border-error-500" : "border-neutral-200"
-              }`}
+              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${errors.name ? "border-error-500" : "border-neutral-200"
+                }`}
             >
               <User size={20} color="#94a3b8" />
               <TextInput
@@ -188,9 +194,8 @@ export default function SignupScreen() {
           <View className="mb-4">
             <Text className="text-neutral-700 font-medium mb-2">Email</Text>
             <View
-              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${
-                errors.email ? "border-error-500" : "border-neutral-200"
-              }`}
+              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${errors.email ? "border-error-500" : "border-neutral-200"
+                }`}
             >
               <Mail size={20} color="#94a3b8" />
               <TextInput
@@ -217,9 +222,8 @@ export default function SignupScreen() {
           <View className="mb-4">
             <Text className="text-neutral-700 font-medium mb-2">Password</Text>
             <View
-              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${
-                errors.password ? "border-error-500" : "border-neutral-200"
-              }`}
+              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${errors.password ? "border-error-500" : "border-neutral-200"
+                }`}
             >
               <Lock size={20} color="#94a3b8" />
               <TextInput
@@ -250,11 +254,10 @@ export default function SignupScreen() {
                   {[1, 2, 3, 4].map((i) => (
                     <View
                       key={i}
-                      className={`flex-1 h-1 rounded-full ${
-                        i <= passwordStrength.strength
-                          ? passwordStrength.color
-                          : "bg-neutral-200"
-                      }`}
+                      className={`flex-1 h-1 rounded-full ${i <= passwordStrength.strength
+                        ? passwordStrength.color
+                        : "bg-neutral-200"
+                        }`}
                     />
                   ))}
                 </View>
@@ -272,9 +275,8 @@ export default function SignupScreen() {
           <View className="mb-4">
             <Text className="text-neutral-700 font-medium mb-2">Confirm Password</Text>
             <View
-              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${
-                errors.confirmPassword ? "border-error-500" : "border-neutral-200"
-              }`}
+              className={`flex-row items-center bg-neutral-50 border rounded-lg px-4 py-3 ${errors.confirmPassword ? "border-error-500" : "border-neutral-200"
+                }`}
             >
               <Lock size={20} color="#94a3b8" />
               <TextInput
@@ -303,13 +305,12 @@ export default function SignupScreen() {
             disabled={isLoading}
           >
             <View
-              className={`w-5 h-5 rounded border mr-3 mt-0.5 items-center justify-center ${
-                acceptTerms
-                  ? "bg-primary-500 border-primary-500"
-                  : errors.terms
+              className={`w-5 h-5 rounded border mr-3 mt-0.5 items-center justify-center ${acceptTerms
+                ? "bg-primary-500 border-primary-500"
+                : errors.terms
                   ? "border-error-500"
                   : "border-neutral-300"
-              }`}
+                }`}
             >
               {acceptTerms && <Check size={14} color="#fff" strokeWidth={3} />}
             </View>
@@ -325,9 +326,8 @@ export default function SignupScreen() {
 
           {/* Sign Up Button */}
           <Pressable
-            className={`rounded-lg py-4 items-center mb-6 ${
-              isLoading ? "bg-primary-400" : "bg-primary-500 active:bg-primary-600"
-            }`}
+            className={`rounded-lg py-4 items-center mb-6 ${isLoading ? "bg-primary-400" : "bg-primary-500 active:bg-primary-600"
+              }`}
             onPress={handleSignup}
             disabled={isLoading}
           >

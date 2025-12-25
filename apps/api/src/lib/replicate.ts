@@ -13,9 +13,11 @@ export const HEYGEN_MODEL = {
 
 /**
  * Map language codes to Replicate's expected language names
- * Based on HeyGen video-translate model requirements
+ * Based on HeyGen video-translate model API requirements
+ * Format: Exact strings from Replicate API validation
  */
 const LANGUAGE_CODE_TO_REPLICATE: Record<string, string> = {
+  // Base language codes (no region)
   en: "English",
   es: "Spanish",
   fr: "French",
@@ -35,19 +37,195 @@ const LANGUAGE_CODE_TO_REPLICATE: Record<string, string> = {
   th: "Thai",
   id: "Indonesian",
   sv: "Swedish",
+  da: "Danish",
+  ro: "Romanian",
+  fil: "Filipino",
+  uk: "Ukrainian",
+  el: "Greek",
+  cs: "Czech",
+  bg: "Bulgarian",
+  ms: "Malay",
+  sk: "Slovak",
+  hr: "Croatian",
+  ta: "Tamil",
+  fi: "Finnish",
+
+  // Regional variants - Full format as required by Replicate (lowercase keys)
+  "fa-ir": "Persian (Iran)",
+  "af-za": "Afrikaans (South Africa)",
+  "sq-al": "Albanian (Albania)",
+  "am-et": "Amharic (Ethiopia)",
+  "ar-dz": "Arabic (Algeria)",
+  "ar-bh": "Arabic (Bahrain)",
+  "ar-eg": "Arabic (Egypt)",
+  "ar-iq": "Arabic (Iraq)",
+  "ar-jo": "Arabic (Jordan)",
+  "ar-kw": "Arabic (Kuwait)",
+  "ar-lb": "Arabic (Lebanon)",
+  "ar-ly": "Arabic (Libya)",
+  "ar-ma": "Arabic (Morocco)",
+  "ar-om": "Arabic (Oman)",
+  "ar-qa": "Arabic (Qatar)",
+  "ar-sa": "Arabic (Saudi Arabia)",
+  "ar-sy": "Arabic (Syria)",
+  "ar-tn": "Arabic (Tunisia)",
+  "ar-ae": "Arabic (United Arab Emirates)",
+  "ar-ye": "Arabic (Yemen)",
+  "hy-am": "Armenian (Armenia)",
+  "az-az": "Azerbaijani (Latin, Azerbaijan)",
+  "bn-bd": "Bangla (Bangladesh)",
+  "bn-in": "Bengali (India)",
+  eu: "Basque",
+  "bs-ba": "Bosnian (Bosnia and Herzegovina)",
+  "bg-bg": "Bulgarian (Bulgaria)",
+  "my-mm": "Burmese (Myanmar)",
+  ca: "Catalan",
+  "zh-hk": "Chinese (Cantonese, Traditional)",
+  "zh-cn-shandong": "Chinese (Jilu Mandarin, Simplified)",
+  "zh-cn-mandarin": "Chinese (Mandarin, Simplified)",
+  "zh-cn": "Chinese (Mandarin, Simplified)",
+  "zh-cn-liaoning": "Chinese (Northeastern Mandarin, Simplified)",
+  "zh-cn-sichuan": "Chinese (Southwestern Mandarin, Simplified)",
+  "zh-tw": "Chinese (Taiwanese Mandarin, Traditional)",
+  "zh-cn-shanghai": "Chinese (Wu, Simplified)",
+  "zh-cn-henan": "Chinese (Zhongyuan Mandarin Henan, Simplified)",
+  "zh-cn-shaanxi": "Chinese (Zhongyuan Mandarin Shaanxi, Simplified)",
+  "hr-hr": "Croatian (Croatia)",
+  "cs-cz": "Czech (Czechia)",
+  "da-dk": "Danish (Denmark)",
+  "nl-be": "Dutch (Belgium)",
+  "nl-nl": "Dutch (Netherlands)",
+  "en-au": "English (Australia)",
+  "en-ca": "English (Canada)",
+  "en-hk": "English (Hong Kong SAR)",
+  "en-in": "English (India)",
+  "en-ie": "English (Ireland)",
+  "en-ke": "English (Kenya)",
+  "en-nz": "English (New Zealand)",
+  "en-ng": "English (Nigeria)",
+  "en-ph": "English (Philippines)",
+  "en-sg": "English (Singapore)",
+  "en-za": "English (South Africa)",
+  "en-tz": "English (Tanzania)",
+  "en-gb": "English (UK)",
+  "en-us": "English (United States)",
+  "et-ee": "Estonian (Estonia)",
+  "fil-ph": "Filipino (Philippines)",
+  "fi-fi": "Finnish (Finland)",
+  "fr-be": "French (Belgium)",
+  "fr-ca": "French (Canada)",
+  "fr-fr": "French (France)",
+  "fr-ch": "French (Switzerland)",
+  gl: "Galician",
+  "ka-ge": "Georgian (Georgia)",
+  "de-at": "German (Austria)",
+  "de-de": "German (Germany)",
+  "de-ch": "German (Switzerland)",
+  "el-gr": "Greek (Greece)",
+  "gu-in": "Gujarati (India)",
+  "he-il": "Hebrew (Israel)",
+  "hi-in": "Hindi (India)",
+  "hu-hu": "Hungarian (Hungary)",
+  "is-is": "Icelandic (Iceland)",
+  "id-id": "Indonesian (Indonesia)",
+  "ga-ie": "Irish (Ireland)",
+  "it-it": "Italian (Italy)",
+  "ja-jp": "Japanese (Japan)",
+  "jv-id": "Javanese (Latin, Indonesia)",
+  "kn-in": "Kannada (India)",
+  "kk-kz": "Kazakh (Kazakhstan)",
+  "km-kh": "Khmer (Cambodia)",
+  "ko-kr": "Korean (Korea)",
+  "lo-la": "Lao (Laos)",
+  "lv-lv": "Latvian (Latvia)",
+  "lt-lt": "Lithuanian (Lithuania)",
+  "mk-mk": "Macedonian (North Macedonia)",
+  "ms-my": "Malay (Malaysia)",
+  "ml-in": "Malayalam (India)",
+  "mt-mt": "Maltese (Malta)",
+  "mr-in": "Marathi (India)",
+  "mn-mn": "Mongolian (Mongolia)",
+  "ne-np": "Nepali (Nepal)",
+  "nb-no": "Norwegian Bokmål (Norway)",
+  "ps-af": "Pashto (Afghanistan)",
+  "pl-pl": "Polish (Poland)",
+  "pt-br": "Portuguese (Brazil)",
+  "pt-pt": "Portuguese (Portugal)",
+  "ro-ro": "Romanian (Romania)",
+  "ru-ru": "Russian (Russia)",
+  "sr-rs": "Serbian (Latin, Serbia)",
+  "si-lk": "Sinhala (Sri Lanka)",
+  "sk-sk": "Slovak (Slovakia)",
+  "sl-si": "Slovenian (Slovenia)",
+  "so-so": "Somali (Somalia)",
+  "es-ar": "Spanish (Argentina)",
+  "es-bo": "Spanish (Bolivia)",
+  "es-cl": "Spanish (Chile)",
+  "es-co": "Spanish (Colombia)",
+  "es-cr": "Spanish (Costa Rica)",
+  "es-cu": "Spanish (Cuba)",
+  "es-do": "Spanish (Dominican Republic)",
+  "es-ec": "Spanish (Ecuador)",
+  "es-sv": "Spanish (El Salvador)",
+  "es-gq": "Spanish (Equatorial Guinea)",
+  "es-gt": "Spanish (Guatemala)",
+  "es-hn": "Spanish (Honduras)",
+  "es-mx": "Spanish (Mexico)",
+  "es-ni": "Spanish (Nicaragua)",
+  "es-pa": "Spanish (Panama)",
+  "es-py": "Spanish (Paraguay)",
+  "es-pe": "Spanish (Peru)",
+  "es-pr": "Spanish (Puerto Rico)",
+  "es-es": "Spanish (Spain)",
+  "es-us": "Spanish (United States)",
+  "es-uy": "Spanish (Uruguay)",
+  "es-ve": "Spanish (Venezuela)",
+  "su-id": "Sundanese (Indonesia)",
+  "sw-ke": "Swahili (Kenya)",
+  "sw-tz": "Swahili (Tanzania)",
+  "sv-se": "Swedish (Sweden)",
+  "ta-in": "Tamil (India)",
+  "ta-my": "Tamil (Malaysia)",
+  "ta-sg": "Tamil (Singapore)",
+  "ta-lk": "Tamil (Sri Lanka)",
+  "te-in": "Telugu (India)",
+  "th-th": "Thai (Thailand)",
+  "tr-tr": "Turkish (Türkiye)",
+  "uk-ua": "Ukrainian (Ukraine)",
+  "ur-in": "Urdu (India)",
+  "ur-pk": "Urdu (Pakistan)",
+  "uz-uz": "Uzbek (Latin, Uzbekistan)",
+  "vi-vn": "Vietnamese (Vietnam)",
+  "cy-gb": "Welsh (United Kingdom)",
+  "zu-za": "Zulu (South Africa)",
+  "en-accent": "English - Your Accent",
+  "en-us-accent": "English - American Accent",
 } as const;
 
 /**
  * Convert language code to Replicate's expected format
- * @param code - ISO language code (e.g., "en", "es", "fr")
- * @returns Full language name expected by Replicate (e.g., "English", "Spanish", "French")
+ * Handles both base codes (e.g., "en") and regional variants (e.g., "en-US", "fa-IR")
+ * @param code - ISO language code (e.g., "en", "es", "fr", "fa-IR")
+ * @returns Full language name expected by Replicate (e.g., "English", "Spanish", "French", "Persian")
  */
 export function mapLanguageCodeToReplicate(code: string): string {
-  const mapped = LANGUAGE_CODE_TO_REPLICATE[code.toLowerCase()];
+  // Normalize to lowercase
+  const normalizedCode = code.toLowerCase();
+
+  // Try exact match first
+  let mapped = LANGUAGE_CODE_TO_REPLICATE[normalizedCode];
+
+  // If not found and code contains a hyphen (regional variant), try base language code
+  if (!mapped && normalizedCode.includes('-')) {
+    const baseCode = normalizedCode.split('-')[0];
+    mapped = LANGUAGE_CODE_TO_REPLICATE[baseCode];
+  }
+
   if (!mapped) {
     console.warn(`Unknown language code: ${code}, falling back to English`);
     return "English";
   }
+
   return mapped;
 }
 
