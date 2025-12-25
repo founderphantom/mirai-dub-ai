@@ -17,9 +17,8 @@ function TabIcon({ focused, icon: Icon, label }: { focused: boolean; icon: React
         strokeWidth={focused ? 2.5 : 2}
       />
       <Text
-        className={`text-xs mt-1 ${
-          focused ? "text-primary-500 font-semibold" : "text-neutral-500"
-        }`}
+        className={`text-xs mt-1 ${focused ? "text-primary-500 font-semibold" : "text-neutral-500"
+          }`}
       >
         {label}
       </Text>
@@ -44,7 +43,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon={Home} label="Home" />

@@ -296,7 +296,8 @@ export default function LibraryScreen() {
           <Text className="text-neutral-600 ml-2">
             {credits ? (
               <>
-                <Text className="font-semibold">{formatCredits(credits.balance)}</Text> remaining
+                <Text className="font-semibold">{formatCredits(credits.balance)}</Text>
+                {credits.trialVideosRemaining > 0 ? " + Free Video" : " remaining"}
               </>
             ) : (
               "Loading..."

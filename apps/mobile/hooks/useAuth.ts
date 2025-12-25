@@ -17,6 +17,7 @@ export function useSession() {
  * Hook for anonymous sign-in (auto sign-in for new users)
  */
 export function useAnonymousSignIn() {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -29,6 +30,7 @@ export function useAnonymousSignIn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
+      router.replace("/home");
     },
   });
 }
@@ -53,7 +55,7 @@ export function useEmailSignIn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
-      router.replace("/(tabs)");
+      router.replace("/home");
     },
   });
 }
@@ -79,7 +81,7 @@ export function useEmailSignUp() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
-      router.replace("/(tabs)");
+      router.replace("/home");
     },
   });
 }
@@ -95,7 +97,7 @@ export function useGoogleSignIn() {
     mutationFn: async () => {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/(tabs)",
+        callbackURL: "/home",
       });
       if (result.error) {
         throw new ApiError(result.error.code || "AUTH_ERROR", result.error.message || "Google sign-in failed", 401);
@@ -104,7 +106,7 @@ export function useGoogleSignIn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
-      router.replace("/(tabs)");
+      router.replace("/home");
     },
   });
 }
@@ -120,7 +122,7 @@ export function useAppleSignIn() {
     mutationFn: async () => {
       const result = await authClient.signIn.social({
         provider: "apple",
-        callbackURL: "/(tabs)",
+        callbackURL: "/home",
       });
       if (result.error) {
         throw new ApiError(result.error.code || "AUTH_ERROR", result.error.message || "Apple sign-in failed", 401);
@@ -129,7 +131,7 @@ export function useAppleSignIn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
-      router.replace("/(tabs)");
+      router.replace("/home");
     },
   });
 }
@@ -148,7 +150,7 @@ export function useConvertAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
-      router.replace("/(tabs)");
+      router.replace("/home");
     },
   });
 }

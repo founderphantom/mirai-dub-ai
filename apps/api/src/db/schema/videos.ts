@@ -67,6 +67,11 @@ export const videos = sqliteTable("videos", {
   thumbnailKey: text("thumbnail_key"),
   previewKey: text("preview_key"),
 
+  // Multipart upload tracking
+  uploadId: text("upload_id"),
+  uploadedParts: text("uploaded_parts", { mode: "json" })
+    .$type<Array<{ partNumber: number; etag: string }>>(),
+
   // Processing status
   status: text("status", { enum: videoStatuses }).notNull().default("uploading"),
   progress: integer("progress").notNull().default(0), // 0-100

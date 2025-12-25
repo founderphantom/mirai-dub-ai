@@ -12,6 +12,7 @@ export default function LoginScreen() {
     signInEmail,
     signInGoogle,
     signInApple,
+    signInAnonymous,
     isSigningIn,
   } = useAuth();
 
@@ -63,6 +64,16 @@ export default function LoginScreen() {
   const handleAppleLogin = async () => {
     try {
       await signInApple();
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string })?.code || "UNKNOWN";
+      setErrors({ general: getErrorMessage(errorCode) });
+    }
+  };
+
+  const handleAnonymousLogin = async () => {
+    try {
+      await signInAnonymous();
+      // Navigation is handled in the hook
     } catch (error: unknown) {
       const errorCode = (error as { code?: string })?.code || "UNKNOWN";
       setErrors({ general: getErrorMessage(errorCode) });
@@ -208,6 +219,15 @@ export default function LoginScreen() {
               <Text className="text-white font-medium ml-2">Apple</Text>
             </Pressable>
           </View>
+
+          {/* Continue Anonymously */}
+          <Pressable
+            className="items-center py-3 mb-6"
+            onPress={handleAnonymousLogin}
+            disabled={isSigningIn}
+          >
+            <Text className="text-neutral-600 font-medium">Continue Anonymously</Text>
+          </Pressable>
 
           {/* Sign Up Link */}
           <View className="flex-row justify-center">

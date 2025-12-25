@@ -12,6 +12,46 @@ export const HEYGEN_MODEL = {
 } as const;
 
 /**
+ * Map language codes to Replicate's expected language names
+ * Based on HeyGen video-translate model requirements
+ */
+const LANGUAGE_CODE_TO_REPLICATE: Record<string, string> = {
+  en: "English",
+  es: "Spanish",
+  fr: "French",
+  de: "German",
+  it: "Italian",
+  pt: "Portuguese",
+  ja: "Japanese",
+  zh: "Chinese",
+  ko: "Korean",
+  ar: "Arabic",
+  hi: "Hindi",
+  ru: "Russian",
+  nl: "Dutch",
+  pl: "Polish",
+  tr: "Turkish",
+  vi: "Vietnamese",
+  th: "Thai",
+  id: "Indonesian",
+  sv: "Swedish",
+} as const;
+
+/**
+ * Convert language code to Replicate's expected format
+ * @param code - ISO language code (e.g., "en", "es", "fr")
+ * @returns Full language name expected by Replicate (e.g., "English", "Spanish", "French")
+ */
+export function mapLanguageCodeToReplicate(code: string): string {
+  const mapped = LANGUAGE_CODE_TO_REPLICATE[code.toLowerCase()];
+  if (!mapped) {
+    console.warn(`Unknown language code: ${code}, falling back to English`);
+    return "English";
+  }
+  return mapped;
+}
+
+/**
  * Create Replicate client
  */
 export function createReplicateClient(apiToken: string): Replicate {
@@ -22,9 +62,8 @@ export function createReplicateClient(apiToken: string): Replicate {
  * Input parameters for HeyGen video translate
  */
 export interface VideoTranslateInput {
-  video_url: string;
-  source_language?: string;
-  target_language: string;
+  video: string;
+  output_language?: string;
 }
 
 /**
@@ -39,9 +78,8 @@ export async function createTranslationPrediction(
     // Use the model identifier - will need to be updated with actual HeyGen model
     model: `${HEYGEN_MODEL.owner}/${HEYGEN_MODEL.name}`,
     input: {
-      video_url: input.video_url,
-      source_language: input.source_language || "auto",
-      target_language: input.target_language,
+      video: input.video,
+      output_language: input.output_language,
     },
     webhook: webhookUrl,
     webhook_events_filter: ["completed"],

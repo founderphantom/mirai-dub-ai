@@ -61,6 +61,64 @@ export async function uploadToR2(
 }
 
 /**
+ * Initiate a multipart upload to R2
+ * Returns uploadId needed for subsequent part uploads
+ */
+export async function initiateMultipartUpload(
+  bucket: R2Bucket,
+  key: string,
+  contentType: string
+): Promise<string> {
+  const multipartUpload = await bucket.createMultipartUpload(key, {
+    httpMetadata: { contentType },
+  });
+  return multipartUpload.uploadId;
+}
+
+/**
+ * Upload a single part of a multipart upload
+ * Returns etag needed for completion
+ */
+export async function uploadPart(
+  bucket: R2Bucket,
+  key: string,
+  uploadId: string,
+  partNumber: number,
+  body: ArrayBuffer
+): Promise<string> {
+  const multipartUpload = bucket.resumeMultipartUpload(key, uploadId);
+  const uploadedPart = await multipartUpload.uploadPart(partNumber, body);
+  return uploadedPart.etag;
+}
+
+/**
+ * Complete a multipart upload
+ * Assembles all parts into final object
+ */
+export async function completeMultipartUpload(
+  bucket: R2Bucket,
+  key: string,
+  uploadId: string,
+  parts: Array<{ partNumber: number; etag: string }>
+): Promise<void> {
+  const multipartUpload = bucket.resumeMultipartUpload(key, uploadId);
+  await multipartUpload.complete(parts);
+}
+
+/**
+ * Abort a multipart upload and cleanup
+ * Use when upload fails or is cancelled
+ */
+export async function abortMultipartUpload(
+  bucket: R2Bucket,
+  key: string,
+  uploadId: string
+): Promise<void> {
+  const multipartUpload = bucket.resumeMultipartUpload(key, uploadId);
+  await multipartUpload.abort();
+}
+
+/**
  * Download file from R2
  */
 export async function downloadFromR2(

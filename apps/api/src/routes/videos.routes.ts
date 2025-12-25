@@ -206,9 +206,9 @@ videoRoutes.get("/:id/download", async (c) => {
 
     return c.json(
       successResponse({
-        downloadUrl,
+        url: downloadUrl,
         fileName: `${video.title}_${video.targetLanguage}.mp4`,
-        expiresIn: 3600, // URL valid for 1 hour
+        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(), // URL valid for 1 hour
       })
     );
   } catch (error) {

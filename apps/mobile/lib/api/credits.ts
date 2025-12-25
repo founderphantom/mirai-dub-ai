@@ -3,6 +3,7 @@ import { apiClient, PaginatedData } from "./client";
 export type CreditBalance = {
   balance: number;
   trialVideosUsed: number;
+  trialVideosRemaining: number;
   bonusVideosAvailable: number;
   plan: "free" | "pro" | "enterprise";
   isAnonymous: boolean;

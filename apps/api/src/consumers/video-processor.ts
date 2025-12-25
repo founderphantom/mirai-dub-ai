@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import * as schema from "../db/schema";
 import { videos, jobs } from "../db/schema";
 import type { CloudflareBindings, VideoProcessingMessage } from "../env";
-import { createReplicateClient, createTranslationPrediction } from "../lib/replicate";
+import { createReplicateClient, createTranslationPrediction, mapLanguageCodeToReplicate } from "../lib/replicate";
 import { getPublicUrl } from "../lib/storage";
 
 /**
@@ -74,9 +74,8 @@ export async function handleVideoProcessing(
       const prediction = await createTranslationPrediction(
         replicate,
         {
-          video_url: videoUrl,
-          source_language: video.sourceLanguage === "auto" ? undefined : video.sourceLanguage,
-          target_language: video.targetLanguage,
+          video: videoUrl,
+          output_language: mapLanguageCodeToReplicate(video.targetLanguage),
         },
         webhookUrl
       );

@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, Linking } from "react-native";
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -54,6 +55,8 @@ export default function VideoDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<Video>(null);
 
   // Fetch video by ID
   const { data: video, isLoading, isError, error } = useVideo(id || "");
@@ -97,6 +100,13 @@ export default function VideoDetailScreen() {
       Alert.alert("Share Failed", "Unable to share video. Please try again.");
     }
   }, [video, id]);
+
+  const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
+    if (!status.isLoaded && status.error) {
+      console.error('Video playback error:', status.error);
+      setVideoError(true);
+    }
+  }, []);
 
   const handleDelete = useCallback(() => {
     Alert.alert(
@@ -197,50 +207,62 @@ export default function VideoDetailScreen() {
           </Pressable>
         </View>
 
-        {/* Video Preview */}
+        {/* Video Preview/Player */}
         <View className="mx-4 rounded-xl overflow-hidden mb-6">
           <View className="relative">
-            {video.thumbnailUrl ? (
-              <Image
-                source={{ uri: video.thumbnailUrl }}
-                className="w-full h-52 bg-neutral-200"
-                resizeMode="cover"
+            {isCompleted && video.downloadUrl && !videoError ? (
+              // Show video player for completed videos
+              <Video
+                ref={videoRef}
+                source={{ uri: video.downloadUrl }}
+                style={{ width: '100%', height: 208 }}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+                onError={(error) => {
+                  console.error('Video error:', error);
+                  setVideoError(true);
+                }}
               />
             ) : (
-              <View className="w-full h-52 bg-neutral-200 items-center justify-center">
-                <Play size={48} color="#94a3b8" />
-              </View>
-            )}
+              // Show thumbnail for non-completed or error states
+              <>
+                {video.thumbnailUrl ? (
+                  <Image
+                    source={{ uri: video.thumbnailUrl }}
+                    className="w-full h-52 bg-neutral-200"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="w-full h-52 bg-neutral-200 items-center justify-center">
+                    <Play size={48} color="#94a3b8" />
+                  </View>
+                )}
 
-            {/* Play button overlay for completed */}
-            {isCompleted && (
-              <View className="absolute inset-0 items-center justify-center bg-black/30">
-                <View className="bg-white rounded-full p-4 shadow-lg">
-                  <Play size={32} color="#334155" fill="#334155" />
-                </View>
-              </View>
-            )}
+                {/* Processing overlay */}
+                {isProcessing && (
+                  <View className="absolute inset-0 items-center justify-center bg-black/50">
+                    <View className="bg-white rounded-full p-4">
+                      <Loader size={32} color="#3b82f6" />
+                    </View>
+                    <Text className="text-white font-medium mt-3">
+                      {video.status === "queued" ? "Queued..." : `Processing ${video.progress}%`}
+                    </Text>
+                  </View>
+                )}
 
-            {/* Processing overlay */}
-            {isProcessing && (
-              <View className="absolute inset-0 items-center justify-center bg-black/50">
-                <View className="bg-white rounded-full p-4">
-                  <Loader size={32} color="#3b82f6" />
-                </View>
-                <Text className="text-white font-medium mt-3">
-                  {video.status === "queued" ? "Queued..." : `Processing ${video.progress}%`}
-                </Text>
-              </View>
-            )}
-
-            {/* Failed overlay */}
-            {isFailed && (
-              <View className="absolute inset-0 items-center justify-center bg-black/50">
-                <View className="bg-error-500 rounded-full p-4">
-                  <AlertCircle size={32} color="#fff" />
-                </View>
-                <Text className="text-white font-medium mt-3">Processing Failed</Text>
-              </View>
+                {/* Failed or Video Error overlay */}
+                {(isFailed || videoError) && (
+                  <View className="absolute inset-0 items-center justify-center bg-black/50">
+                    <View className="bg-error-500 rounded-full p-4">
+                      <AlertCircle size={32} color="#fff" />
+                    </View>
+                    <Text className="text-white font-medium mt-3">
+                      {isFailed ? "Processing Failed" : "Video Unavailable"}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
 
             {/* Duration badge */}

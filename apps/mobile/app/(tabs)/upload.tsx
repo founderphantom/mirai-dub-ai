@@ -7,13 +7,12 @@ import {
   Upload,
   ArrowRight,
   Info,
-  ChevronDown,
   CheckCircle,
 } from "lucide-react-native";
 import { useCredits, formatCredits } from "@/hooks";
 import { useVideoStore } from "@/stores/videoStore";
 import { uploadApi } from "@/lib/api";
-import { SUPPORTED_LANGUAGES } from "@/lib/constants";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
 
 const tips = [
   "Use videos with clear audio and minimal background noise",
@@ -27,8 +26,6 @@ export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [sourceLanguage, setSourceLanguage] = useState("auto");
   const [targetLanguage, setTargetLanguage] = useState("");
-  const [showSourcePicker, setShowSourcePicker] = useState(false);
-  const [showTargetPicker, setShowTargetPicker] = useState(false);
 
   // Real API hooks
   const { data: credits, isLoading: isLoadingCredits } = useCredits();
@@ -58,13 +55,15 @@ export default function UploadScreen() {
     }
 
     // Check credits
-    if (credits && credits.balance <= 0) {
+    const hasCredits = credits && (credits.balance > 0 || credits.trialVideosRemaining > 0);
+
+    if (!hasCredits) {
       Alert.alert(
         "Insufficient Credits",
         "You don't have enough credits to translate this video. Please purchase more credits.",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Purchase Credits", onPress: () => router.push("/credits/packages") },
+          { text: "Purchase Credits", onPress: () => router.push("/(tabs)/upload") },
         ]
       );
       return;
@@ -94,11 +93,11 @@ export default function UploadScreen() {
         }
       );
 
-      setCurrentUploadVideoId(video.id);
+      setCurrentUploadVideoId(video.video.id);
       setUploading(false, 100);
 
       // Navigate to processing screen
-      router.push(`/video/processing?videoId=${video.id}`);
+      router.push(`/video/processing?videoId=${video.video.id}`);
 
       // Reset form
       setSelectedFile(null);
@@ -112,13 +111,6 @@ export default function UploadScreen() {
   }, [selectedFile, targetLanguage, sourceLanguage, credits, router, setUploading, setCurrentUploadVideoId, setError]);
 
   const isValid = selectedFile && targetLanguage && !isUploading;
-
-  // Languages with auto-detect option for source
-  const sourceLanguages = SUPPORTED_LANGUAGES;
-
-  const targetLanguages = SUPPORTED_LANGUAGES.filter(
-    (l) => l.code !== "auto" && (l.code !== sourceLanguage || sourceLanguage === "auto")
-  );
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -139,9 +131,8 @@ export default function UploadScreen() {
 
         {/* Upload Zone */}
         <Pressable
-          className={`border-2 border-dashed rounded-xl p-8 items-center justify-center mb-6 ${
-            selectedFile ? "border-primary-500 bg-primary-50" : "border-neutral-300 bg-neutral-50"
-          } ${isUploading ? "opacity-50" : ""}`}
+          className={`border-2 border-dashed rounded-xl p-8 items-center justify-center mb-6 ${selectedFile ? "border-primary-500 bg-primary-50" : "border-neutral-300 bg-neutral-50"
+            } ${isUploading ? "opacity-50" : ""}`}
           onPress={handleFilePick}
           disabled={isUploading}
         >
@@ -197,107 +188,43 @@ export default function UploadScreen() {
             Select Languages
           </Text>
 
-          <View className="flex-row items-center gap-3">
+          <View className="flex-row items-end gap-3">
             {/* Source Language */}
             <View className="flex-1">
-              <Text className="text-neutral-500 text-sm mb-2">From</Text>
-              <Pressable
-                className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 flex-row items-center justify-between"
-                onPress={() => {
-                  setShowSourcePicker(!showSourcePicker);
-                  setShowTargetPicker(false);
-                }}
+              <LanguagePicker
+                label="From"
+                placeholder="Select language"
+                value={sourceLanguage}
+                onChange={setSourceLanguage}
                 disabled={isUploading}
-              >
-                <Text className="text-neutral-700">
-                  {sourceLanguages.find((l) => l.code === sourceLanguage)?.flag}{" "}
-                  {sourceLanguages.find((l) => l.code === sourceLanguage)?.name}
-                </Text>
-                <ChevronDown size={20} color="#64748b" />
-              </Pressable>
+                excludeAuto={false}
+              />
             </View>
 
             {/* Arrow */}
-            <View className="pt-6">
-              <ArrowRight size={20} color="#94a3b8" />
+            <View className="pb-2">
+              <View className="w-8 h-8 bg-primary-100 rounded-full items-center justify-center">
+                <ArrowRight size={16} color="#2563EB" />
+              </View>
             </View>
 
             {/* Target Language */}
             <View className="flex-1">
-              <Text className="text-neutral-500 text-sm mb-2">To</Text>
-              <Pressable
-                className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 flex-row items-center justify-between"
-                onPress={() => {
-                  setShowTargetPicker(!showTargetPicker);
-                  setShowSourcePicker(false);
-                }}
+              <LanguagePicker
+                label="To"
+                placeholder="Select language"
+                value={targetLanguage}
+                onChange={setTargetLanguage}
                 disabled={isUploading}
-              >
-                <Text className={targetLanguage ? "text-neutral-700" : "text-neutral-400"}>
-                  {targetLanguage
-                    ? `${targetLanguages.find((l) => l.code === targetLanguage)?.flag} ${targetLanguages.find((l) => l.code === targetLanguage)?.name}`
-                    : "Select target language"}
-                </Text>
-                <ChevronDown size={20} color="#64748b" />
-              </Pressable>
+                excludeAuto={true}
+              />
             </View>
           </View>
 
-          {/* Source Language Picker */}
-          {showSourcePicker && (
-            <View className="mt-2 bg-white border border-neutral-200 rounded-lg shadow-floating max-h-64">
-              <ScrollView nestedScrollEnabled>
-                {sourceLanguages.map((language) => (
-                  <Pressable
-                    key={language.code}
-                    className="p-3 border-b border-neutral-100 flex-row items-center"
-                    onPress={() => {
-                      setSourceLanguage(language.code);
-                      setShowSourcePicker(false);
-                      // Reset target if same as source
-                      if (language.code === targetLanguage) {
-                        setTargetLanguage("");
-                      }
-                    }}
-                  >
-                    <Text className="text-lg mr-2">{language.flag}</Text>
-                    <Text className="text-neutral-700">{language.name}</Text>
-                    {language.code === sourceLanguage && (
-                      <View className="ml-auto">
-                        <CheckCircle size={18} color="#3b82f6" />
-                      </View>
-                    )}
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* Target Language Picker */}
-          {showTargetPicker && (
-            <View className="mt-2 bg-white border border-neutral-200 rounded-lg shadow-floating max-h-64">
-              <ScrollView nestedScrollEnabled>
-                {targetLanguages.map((language) => (
-                  <Pressable
-                    key={language.code}
-                    className="p-3 border-b border-neutral-100 flex-row items-center"
-                    onPress={() => {
-                      setTargetLanguage(language.code);
-                      setShowTargetPicker(false);
-                    }}
-                  >
-                    <Text className="text-lg mr-2">{language.flag}</Text>
-                    <Text className="text-neutral-700">{language.name}</Text>
-                    {language.code === targetLanguage && (
-                      <View className="ml-auto">
-                        <CheckCircle size={18} color="#3b82f6" />
-                      </View>
-                    )}
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+          {/* Helper Text */}
+          <Text className="text-xs text-neutral-500 mt-3 text-center">
+            Auto-detect will identify the spoken language in your video
+          </Text>
         </View>
 
         {/* Translation Credits Card */}
@@ -326,7 +253,7 @@ export default function UploadScreen() {
                 <View
                   className="h-2 bg-primary-500 rounded-full"
                   style={{
-                    width: `${Math.min(100, (credits.balance / Math.max(credits.balance + credits.used, 1)) * 100)}%`,
+                    width: `${Math.min(100, (credits.balance / Math.max(credits.balance + credits.trialVideosUsed, 1)) * 100)}%`,
                   }}
                 />
               </View>
@@ -339,9 +266,9 @@ export default function UploadScreen() {
 
               <View className="flex-row justify-between mb-4">
                 <View>
-                  <Text className="text-neutral-500 text-sm">Used</Text>
+                  <Text className="text-neutral-500 text-sm">Trial Used</Text>
                   <Text className="text-neutral-700 font-medium">
-                    {formatCredits(credits.used)}
+                    {credits.trialVideosUsed}
                   </Text>
                 </View>
                 <View className="items-end">
@@ -352,10 +279,10 @@ export default function UploadScreen() {
                 </View>
               </View>
 
-              {credits.trialMinutes > 0 && (
+              {credits.trialVideosRemaining > 0 && (
                 <View className="bg-success-50 border border-success-200 rounded-lg p-2 mb-3">
                   <Text className="text-success-700 text-sm text-center">
-                    Includes {credits.trialMinutes} free trial minutes
+                    Includes {credits.trialVideosRemaining} free trial video
                   </Text>
                 </View>
               )}
@@ -364,7 +291,7 @@ export default function UploadScreen() {
 
           <Pressable
             className="bg-primary-500 rounded-lg py-3 items-center active:bg-primary-600"
-            onPress={() => router.push("/credits/packages")}
+            onPress={() => router.push("/(tabs)/upload")}
             disabled={isUploading}
           >
             <Text className="text-white font-medium">+ Purchase More Credits</Text>
@@ -400,11 +327,10 @@ export default function UploadScreen() {
 
         {/* Submit Button */}
         <Pressable
-          className={`rounded-lg py-4 items-center ${
-            isValid
-              ? "bg-primary-500 active:bg-primary-600"
-              : "bg-neutral-200"
-          }`}
+          className={`rounded-lg py-4 items-center ${isValid
+            ? "bg-primary-500 active:bg-primary-600"
+            : "bg-neutral-200"
+            }`}
           onPress={handleStartTranslation}
           disabled={!isValid}
         >
@@ -417,9 +343,8 @@ export default function UploadScreen() {
             </View>
           ) : (
             <Text
-              className={`font-semibold text-base ${
-                isValid ? "text-white" : "text-neutral-400"
-              }`}
+              className={`font-semibold text-base ${isValid ? "text-white" : "text-neutral-400"
+                }`}
             >
               Start Translation
             </Text>

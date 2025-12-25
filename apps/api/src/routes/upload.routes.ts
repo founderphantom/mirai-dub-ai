@@ -17,6 +17,10 @@ import {
   existsInR2,
   uploadToR2,
   FileLimits,
+  initiateMultipartUpload,
+  uploadPart,
+  completeMultipartUpload,
+  abortMultipartUpload,
 } from "../lib/storage";
 import { uploadInitiateSchema, uploadCompleteSchema } from "../validators/schemas";
 
@@ -84,6 +88,13 @@ uploadRoutes.post(
       const extension = getExtensionFromMimeType(data.contentType);
       const storageKey = getUploadKey(user.id, videoId, extension);
 
+      // Initiate R2 multipart upload
+      const uploadId = await initiateMultipartUpload(
+        c.env.STORAGE,
+        storageKey,
+        data.contentType
+      );
+
       // Create video record
       const [newVideo] = await db
         .insert(videos)
@@ -97,6 +108,7 @@ uploadRoutes.post(
           fileSizeBytes: data.fileSize,
           mimeType: data.contentType,
           originalKey: storageKey,
+          uploadId,
           status: "uploading",
         })
         .returning();
@@ -104,6 +116,7 @@ uploadRoutes.post(
       return c.json(
         successResponse({
           videoId: newVideo.id,
+          uploadId,
           uploadUrl: `${c.env.API_BASE_URL}/api/upload/${newVideo.id}/chunk`,
           storageKey,
           estimatedCredits: estimatedMinutes,
@@ -118,12 +131,16 @@ uploadRoutes.post(
 
 /**
  * PUT /api/upload/:videoId/chunk
- * Upload video file chunk to R2
+ * Upload video file chunk to R2 using multipart upload
  */
 uploadRoutes.put("/:videoId/chunk", async (c) => {
   const user = c.get("user")!;
   const videoId = c.req.param("videoId");
   const db = createDb(c.env.DB);
+
+  // Get part metadata from headers
+  const partNumber = parseInt(c.req.header("X-Part-Number") || "1");
+  const totalParts = parseInt(c.req.header("X-Total-Parts") || "1");
 
   try {
     // Get video record
@@ -147,22 +164,52 @@ uploadRoutes.put("/:videoId/chunk", async (c) => {
       return c.json(formatErrorResponse(error), error.statusCode);
     }
 
-    // Get request body
-    const body = await c.req.arrayBuffer();
-    const contentType = c.req.header("Content-Type") || video.mimeType || "video/mp4";
+    if (!video.uploadId) {
+      const error = createError(
+        ErrorCodes.INVALID_REQUEST,
+        undefined,
+        "Upload not properly initiated"
+      );
+      return c.json(formatErrorResponse(error), error.statusCode);
+    }
 
-    // Upload to R2
-    await uploadToR2(c.env.STORAGE, video.originalKey!, body, contentType);
+    // Get raw binary body (NOT FormData)
+    const body = await c.req.arrayBuffer();
+
+    // Upload part to R2
+    const etag = await uploadPart(
+      c.env.STORAGE,
+      video.originalKey!,
+      video.uploadId,
+      partNumber,
+      body
+    );
+
+    // Track uploaded part
+    const currentParts = video.uploadedParts || [];
+    currentParts.push({ partNumber, etag });
+
+    await db
+      .update(videos)
+      .set({ uploadedParts: currentParts })
+      .where(eq(videos.id, videoId));
 
     return c.json(
       successResponse({
+        videoId,
+        partNumber,
         uploaded: body.byteLength,
-        videoId: video.id,
+        totalParts: currentParts.length,
       })
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error uploading chunk:", error);
-    return c.json(formatErrorResponse(error), 500);
+    const err = createError(
+      ErrorCodes.INTERNAL_ERROR,
+      undefined,
+      `Chunk upload failed: ${error.message}`
+    );
+    return c.json(formatErrorResponse(err), err.statusCode);
   }
 });
 
@@ -200,6 +247,22 @@ uploadRoutes.post(
         return c.json(formatErrorResponse(error), error.statusCode);
       }
 
+      // Complete multipart upload if it exists
+      if (video.uploadId) {
+        const parts = video.uploadedParts || [];
+
+        // Sort parts by partNumber
+        const sortedParts = parts.sort((a, b) => a.partNumber - b.partNumber);
+
+        // Complete the multipart upload
+        await completeMultipartUpload(
+          c.env.STORAGE,
+          video.originalKey!,
+          video.uploadId,
+          sortedParts
+        );
+      }
+
       // Verify file exists in R2
       const r2Status = await existsInR2(c.env.STORAGE, video.originalKey!);
       if (!r2Status.exists) {
@@ -211,12 +274,14 @@ uploadRoutes.post(
         return c.json(formatErrorResponse(error), error.statusCode);
       }
 
-      // Update video status
+      // Update video status and clear upload tracking data
       await db
         .update(videos)
         .set({
           status: "queued",
           fileSizeBytes: r2Status.size || video.fileSizeBytes,
+          uploadId: null,
+          uploadedParts: null,
           updatedAt: new Date(),
         })
         .where(eq(videos.id, videoId));
@@ -241,9 +306,14 @@ uploadRoutes.post(
 
       return c.json(
         successResponse({
-          videoId: video.id,
-          jobId: job.id,
-          status: "queued",
+          video: {
+            id: video.id,
+            status: "queued",
+          },
+          job: {
+            id: job.id,
+            status: "pending",
+          },
           message: "Video queued for processing",
         })
       );
@@ -253,3 +323,48 @@ uploadRoutes.post(
     }
   }
 );
+
+/**
+ * DELETE /api/upload/:videoId/abort
+ * Abort upload and cleanup
+ */
+uploadRoutes.delete("/:videoId/abort", async (c) => {
+  const user = c.get("user")!;
+  const videoId = c.req.param("videoId");
+  const db = createDb(c.env.DB);
+
+  try {
+    const video = await db
+      .select()
+      .from(videos)
+      .where(and(eq(videos.id, videoId), eq(videos.userId, user.id)))
+      .get();
+
+    if (!video) {
+      const error = createError(ErrorCodes.NOT_FOUND, undefined, "Video not found");
+      return c.json(formatErrorResponse(error), error.statusCode);
+    }
+
+    // Abort R2 multipart upload if exists
+    if (video.uploadId) {
+      await abortMultipartUpload(
+        c.env.STORAGE,
+        video.originalKey!,
+        video.uploadId
+      );
+    }
+
+    // Delete video record
+    await db.delete(videos).where(eq(videos.id, videoId));
+
+    return c.json(successResponse({ message: "Upload aborted" }));
+  } catch (error: any) {
+    console.error("Error aborting upload:", error);
+    const err = createError(
+      ErrorCodes.INTERNAL_ERROR,
+      undefined,
+      `Abort failed: ${error.message}`
+    );
+    return c.json(formatErrorResponse(err), err.statusCode);
+  }
+});

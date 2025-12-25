@@ -15,7 +15,8 @@ export type UploadInitiateParams = {
 export type UploadInitiateResponse = {
   videoId: string;
   uploadId: string;
-  maxChunkSize: number;
+  uploadUrl: string;
+  estimatedCredits: number;
 };
 
 export type UploadCompleteResponse = {
@@ -47,27 +48,26 @@ export const uploadApi = {
   async uploadChunk(
     videoId: string,
     chunk: Blob,
-    offset: number,
-    totalSize: number
+    partNumber: number,
+    totalParts: number
   ): Promise<void> {
-    const formData = new FormData();
-    formData.append("chunk", chunk);
-
     // Get cookies from Better Auth for Expo compatibility
     const cookies = authClient.getCookie();
     const headers: Record<string, string> = {
-      "X-Chunk-Offset": offset.toString(),
-      "X-Total-Size": totalSize.toString(),
+      "Content-Type": "application/octet-stream", // Raw binary
+      "X-Part-Number": partNumber.toString(),
+      "X-Total-Parts": totalParts.toString(),
     };
 
     if (cookies) {
       headers["Cookie"] = cookies;
     }
 
+    // Send Blob directly (NOT FormData)
     const response = await fetch(`${API_CONFIG.baseUrl}/api/upload/${videoId}/chunk`, {
       method: "PUT",
       headers,
-      body: formData,
+      body: chunk, // Raw binary Blob
       credentials: "omit", // Use "omit" when manually setting cookies (Expo best practice)
     });
 
@@ -84,6 +84,17 @@ export const uploadApi = {
     return apiClient.post<UploadCompleteResponse>(`/api/upload/${videoId}/complete`, {
       fileSize,
     });
+  },
+
+  /**
+   * Abort upload and cleanup
+   */
+  async abortUpload(videoId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/api/upload/${videoId}/abort`);
+    } catch (err) {
+      console.error("Failed to abort upload:", err);
+    }
   },
 
   /**
@@ -113,26 +124,44 @@ export const uploadApi = {
 
     const { videoId } = initResponse;
 
-    // 2. Read file and upload in chunks
-    const response = await fetch(file.uri);
-    const blob = await response.blob();
+    try {
+      // 2. Read file and upload in chunks
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
 
-    const totalChunks = Math.ceil(blob.size / CHUNK_SIZE);
-    let uploadedBytes = 0;
+      const totalChunks = Math.ceil(blob.size / CHUNK_SIZE);
+      let uploadedBytes = 0;
 
-    for (let i = 0; i < totalChunks; i++) {
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, blob.size);
-      const chunk = blob.slice(start, end);
+      for (let i = 0; i < totalChunks; i++) {
+        const partNumber = i + 1; // R2 uses 1-indexed parts
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, blob.size);
+        const chunk = blob.slice(start, end);
 
-      await this.uploadChunk(videoId, chunk, start, blob.size);
+        // Upload with retry
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            await this.uploadChunk(videoId, chunk, partNumber, totalChunks);
+            break;
+          } catch (err) {
+            retries--;
+            if (retries === 0) throw err;
+            await new Promise((r) => setTimeout(r, 1000)); // Wait 1s before retry
+          }
+        }
 
-      uploadedBytes += chunk.size;
-      const progress = Math.round((uploadedBytes / blob.size) * 100);
-      onProgress?.(progress);
+        uploadedBytes += chunk.size;
+        const progress = Math.round((uploadedBytes / blob.size) * 100);
+        onProgress?.(progress);
+      }
+
+      // 3. Complete upload
+      return this.completeUpload(videoId, file.size);
+    } catch (error) {
+      // Abort upload on error
+      await this.abortUpload(videoId);
+      throw error;
     }
-
-    // 3. Complete upload
-    return this.completeUpload(videoId, file.size);
   },
 };

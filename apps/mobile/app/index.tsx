@@ -75,14 +75,14 @@ export default function Index() {
 
   // If user hasn't completed onboarding, show onboarding
   if (!hasCompletedOnboarding) {
-    return <Redirect href="/onboarding/index" />;
+    return <Redirect href="/onboarding" />;
   }
 
   // If not authenticated after onboarding (anonymous sign-in failed or skipped), show login
   if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href="/login" />;
   }
 
   // Otherwise, go to main app
-  return <Redirect href="/(tabs)" />;
+  return <Redirect href="/home" />;
 }

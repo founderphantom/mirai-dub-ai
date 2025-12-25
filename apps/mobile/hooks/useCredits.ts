@@ -75,7 +75,7 @@ export function useHasCredits(minutesNeeded: number) {
   if (!credits) return { hasCredits: false, canUseTrial: false, canUseBonus: false };
 
   // Check trial (anonymous users get 1 free video)
-  if (credits.isAnonymous && credits.trialVideosUsed < 1) {
+  if (credits.trialVideosRemaining > 0) {
     return { hasCredits: true, canUseTrial: true, canUseBonus: false };
   }
 

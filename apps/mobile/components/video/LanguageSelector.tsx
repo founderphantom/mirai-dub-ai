@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { ArrowRight, Languages } from "lucide-react-native";
-import { Select, type SelectOption } from "@/components/ui/Select";
-import { SUPPORTED_LANGUAGES } from "@/lib/constants";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
 
 interface LanguageSelectorProps {
   sourceLanguage: string;
@@ -13,24 +12,6 @@ interface LanguageSelectorProps {
   targetError?: string;
   disabled?: boolean;
 }
-
-// Convert supported languages to select options
-const sourceLanguageOptions: SelectOption[] = SUPPORTED_LANGUAGES.map((lang) => ({
-  value: lang.code,
-  label: `${lang.flag} ${lang.name}`,
-  description: lang.nativeName,
-  icon: <Text className="text-xl">{lang.flag}</Text>,
-}));
-
-// Target languages exclude auto-detect
-const targetLanguageOptions: SelectOption[] = SUPPORTED_LANGUAGES
-  .filter((lang) => lang.code !== "auto")
-  .map((lang) => ({
-    value: lang.code,
-    label: `${lang.flag} ${lang.name}`,
-    description: lang.nativeName,
-    icon: <Text className="text-xl">{lang.flag}</Text>,
-  }));
 
 export function LanguageSelector({
   sourceLanguage,
@@ -55,14 +36,14 @@ export function LanguageSelector({
       <View className="flex-row items-end">
         {/* Source Language */}
         <View className="flex-1">
-          <Select
+          <LanguagePicker
             label="From"
             placeholder="Select language"
-            options={sourceLanguageOptions}
             value={sourceLanguage}
             onChange={onSourceChange}
             error={sourceError}
             disabled={disabled}
+            excludeAuto={false}
           />
         </View>
 
@@ -75,14 +56,14 @@ export function LanguageSelector({
 
         {/* Target Language */}
         <View className="flex-1">
-          <Select
+          <LanguagePicker
             label="To"
             placeholder="Select language"
-            options={targetLanguageOptions}
             value={targetLanguage}
             onChange={onTargetChange}
             error={targetError}
             disabled={disabled}
+            excludeAuto={true}
           />
         </View>
       </View>

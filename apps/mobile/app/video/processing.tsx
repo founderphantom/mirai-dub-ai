@@ -16,7 +16,7 @@ import {
   Sparkles,
   AlertCircle,
 } from "lucide-react-native";
-import { useProcessing, useVideo } from "@/hooks";
+import { useVideoJob, useVideo } from "@/hooks";
 import type { JobStep } from "@/types/video";
 
 type StepStatus = "pending" | "in-progress" | "completed" | "failed";
@@ -128,7 +128,7 @@ export default function ProcessingScreen() {
   const { data: video, isLoading: isLoadingVideo } = useVideo(videoId || "");
 
   // Fetch and poll job status
-  const { data: job, isLoading: isLoadingJob, isError } = useProcessing(videoId || "");
+  const { data: job, isLoading: isLoadingJob, isError } = useVideoJob(videoId || "");
 
   // Map job steps to UI steps
   const getSteps = useCallback((): ProcessingStep[] => {
