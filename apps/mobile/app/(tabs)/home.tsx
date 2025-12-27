@@ -1,8 +1,9 @@
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Sparkles, Globe, Zap, Shield, Upload, Languages, Cpu, Download, Play, User as UserIcon } from "lucide-react-native";
+import { Sparkles, Globe, Zap, Shield, Upload, Languages, Cpu, Download, Play, User as UserIcon, CreditCard } from "lucide-react-native";
 import { useSession } from "@/lib/api/auth";
+import { useCredits, formatCredits } from "@/hooks";
 
 // Feature card data
 const features = [
@@ -59,8 +60,17 @@ const steps = [
 export default function HomeScreen() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { data: credits } = useCredits();
   const user = session?.user;
   const isSignedIn = user && !user.isAnonymous;
+
+  // Check if user has low credits (less than 5 minutes and no free videos)
+  const hasLowCredits =
+    isSignedIn &&
+    credits &&
+    credits.balance < 5 &&
+    credits.trialVideosRemaining === 0 &&
+    credits.bonusVideosAvailable === 0;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -88,6 +98,28 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {/* Low Credits Banner */}
+      {hasLowCredits && (
+        <Pressable
+          className="mx-4 mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 flex-row items-center active:bg-amber-100"
+          onPress={() => router.push("/credits")}
+        >
+          <CreditCard size={18} color="#d97706" />
+          <View className="flex-1 ml-3">
+            <Text className="text-amber-800 font-medium text-sm">
+              Low on credits ({formatCredits(credits?.balance || 0)} left)
+            </Text>
+          </View>
+          <Pressable
+            className="bg-amber-500 px-3 py-1.5 rounded-lg active:bg-amber-600"
+            onPress={() => router.push("/credits")}
+          >
+            <Text className="text-white text-xs font-semibold">Add More</Text>
+          </Pressable>
+        </Pressable>
+      )}
+
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}

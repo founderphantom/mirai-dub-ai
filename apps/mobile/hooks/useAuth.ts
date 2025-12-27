@@ -138,6 +138,8 @@ export function useAppleSignIn() {
 
 /**
  * Hook to convert anonymous account to full account
+ * Uses Better Auth's signUp.email() which automatically detects the anonymous session
+ * and triggers the onLinkAccount callback to link the accounts
  */
 export function useConvertAccount() {
   const router = useRouter();
@@ -145,14 +147,36 @@ export function useConvertAccount() {
 
   return useMutation({
     mutationFn: async (data: ConvertAccountData) => {
-      // Use the backend's convert endpoint
-      return apiClient.post<{ user: unknown }>("/api/auth/convert", data);
+      console.log("[Convert Account] Starting conversion for anonymous user");
+
+      // Use signUp.email() - Better Auth automatically detects anonymous session
+      // and triggers onLinkAccount callback to link the accounts
+      const result = await authClient.signUp.email({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      });
+
+      console.log("[Convert Account] Result:", JSON.stringify(result, null, 2));
+
+      if (result.error) {
+        console.error("[Convert Account] Error:", result.error);
+        throw new ApiError(
+          result.error.code || "CONVERSION_ERROR",
+          result.error.message || "Failed to convert account",
+          400
+        );
+      }
+
+      return result.data;
     },
     onSuccess: async () => {
-      // Force refresh the session in better-auth to update client state (isAnonymous: false)
-      await authClient.getSession();
+      console.log("[Convert Account] Account converted successfully");
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
       router.replace("/home");
+    },
+    onError: (error) => {
+      console.error("[Convert Account] Mutation error:", error);
     },
   });
 }

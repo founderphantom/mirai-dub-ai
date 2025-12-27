@@ -19,7 +19,7 @@ authRoutes.get("/me", requireAuth, async (c) => {
   const db = createDb(c.env.DB);
 
   try {
-    const dbUser = await db
+    let dbUser = await db
       .select()
       .from(users)
       .where(eq(users.id, user.id))
@@ -28,6 +28,30 @@ authRoutes.get("/me", requireAuth, async (c) => {
     if (!dbUser) {
       const error = createError(ErrorCodes.NOT_FOUND, undefined, "User not found");
       return c.json(formatErrorResponse(error), error.statusCode);
+    }
+
+    // Reconciliation: Auto-fix users who linked email but didn't get bonus due to callback failure
+    if (dbUser.isAnonymous && dbUser.email && !dbUser.email.endsWith("@anonymous.miraidub.ai")) {
+      console.log("[RECONCILIATION] Fixing user who linked but isAnonymous flag still true:", dbUser.id);
+      await db
+        .update(users)
+        .set({
+          isAnonymous: false,
+          bonusVideosAvailable: Math.max(dbUser.bonusVideosAvailable, 2),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id));
+
+      // Reload user with updated data
+      const updated = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, user.id))
+        .get();
+
+      if (updated) {
+        dbUser = updated;
+      }
     }
 
     return c.json(
@@ -53,80 +77,22 @@ authRoutes.get("/me", requireAuth, async (c) => {
 
 /**
  * POST /api/auth/convert
- * Convert anonymous account to full account
+ * @deprecated Use Better Auth's authClient.anonymous.linkEmail() instead
+ * This endpoint is deprecated and will be removed in a future release.
  */
 authRoutes.post(
   "/convert",
   requireAuth,
   zValidator("json", convertAccountSchema),
   async (c) => {
-    const user = c.get("user")!;
-    const { email, name } = c.req.valid("json");
-    // Note: password is validated but handled by Better Auth internally
-    const db = createDb(c.env.DB);
+    console.warn("[DEPRECATED] /api/auth/convert endpoint called. Use authClient.anonymous.linkEmail() instead.");
 
-    try {
-      // Check if already a full account
-      if (!user.isAnonymous) {
-        const error = createError(
-          ErrorCodes.INVALID_REQUEST,
-          undefined,
-          "Account is already a full account"
-        );
-        return c.json(formatErrorResponse(error), error.statusCode);
-      }
-
-      // Check if email already exists
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .get();
-
-      if (existingUser) {
-        const error = createError(
-          ErrorCodes.ALREADY_EXISTS,
-          undefined,
-          "Email already registered"
-        );
-        return c.json(formatErrorResponse(error), error.statusCode);
-      }
-
-      // Update user to full account with bonus videos
-      await db
-        .update(users)
-        .set({
-          email,
-          name,
-          isAnonymous: false,
-          bonusVideosAvailable: 2, // Grant 2 bonus videos on signup
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, user.id));
-
-      // Get updated user
-      const updatedUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, user.id))
-        .get();
-
-      return c.json(
-        successResponse({
-          message: "Account converted successfully",
-          user: {
-            id: updatedUser!.id,
-            email: updatedUser!.email,
-            name: updatedUser!.name,
-            isAnonymous: updatedUser!.isAnonymous,
-            bonusVideosAvailable: updatedUser!.bonusVideosAvailable,
-          },
-        })
-      );
-    } catch (error) {
-      console.error("Error converting account:", error);
-      return c.json(formatErrorResponse(error), 500);
-    }
+    const error = createError(
+      ErrorCodes.INVALID_REQUEST,
+      undefined,
+      "This endpoint is deprecated. Please update your client to use authClient.anonymous.linkEmail()"
+    );
+    return c.json(formatErrorResponse(error), 410); // 410 Gone
   }
 );
 

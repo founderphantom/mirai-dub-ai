@@ -301,12 +301,12 @@ videoRoutes.get("/:id/download-url", async (c) => {
       return c.json(formatErrorResponse(error), error.statusCode);
     }
 
-    // Generate signed download token (valid for 1 hour)
+    // Generate signed download token (valid for 7 days)
     const { token, expiresAt } = await generateDownloadToken(
       videoId,
       user.id,
       c.env.BETTER_AUTH_SECRET,
-      3600 // 1 hour
+      604800 // 7 days
     );
 
     // Construct download URL with token

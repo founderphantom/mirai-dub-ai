@@ -8,14 +8,14 @@
  * @param videoId - The video ID to download
  * @param userId - The user who owns the video
  * @param secret - Secret key for signing
- * @param expiresIn - Token expiration in seconds (default: 1 hour)
+ * @param expiresIn - Token expiration in seconds (default: 7 days)
  * @returns Object with token and expiration timestamp
  */
 export async function generateDownloadToken(
   videoId: string,
   userId: string,
   secret: string,
-  expiresIn: number = 3600 // 1 hour default
+  expiresIn: number = 604800 // 7 days default
 ): Promise<{ token: string; expiresAt: string }> {
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
 

@@ -14,6 +14,7 @@ export default function LoginScreen() {
     signInApple,
     signInAnonymous,
     isSigningIn,
+    isAuthenticated,
   } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -72,6 +73,11 @@ export default function LoginScreen() {
 
   const handleAnonymousLogin = async () => {
     try {
+      // If already authenticated, just navigate to home
+      if (isAuthenticated) {
+        router.replace("/home");
+        return;
+      }
       await signInAnonymous();
       // Navigation is handled in the hook
     } catch (error: unknown) {

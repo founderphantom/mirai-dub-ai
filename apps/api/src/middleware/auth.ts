@@ -39,6 +39,9 @@ export const authMiddleware = createMiddleware<HonoEnv>(async (c, next) => {
     if (!existingUser) {
       console.log("[Auth Middleware] User exists in session but not in DB, creating:", user.id);
 
+      // Grant 2 bonus videos if not anonymous (consistent with database hook logic)
+      const bonusVideos = user.isAnonymous ? 0 : 2;
+
       // Create user with defaults for custom fields
       await db.insert(users).values({
         id: user.id,
@@ -48,14 +51,14 @@ export const authMiddleware = createMiddleware<HonoEnv>(async (c, next) => {
         emailVerified: user.emailVerified,
         isAnonymous: user.isAnonymous,
         trialVideosUsed: 0,
-        bonusVideosAvailable: 0,
+        bonusVideosAvailable: bonusVideos,
         creditsBalance: 0,
         plan: "free",
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       });
 
-      console.log("[Auth Middleware] User created successfully:", user.id);
+      console.log("[Auth Middleware] User created with bonusVideos:", bonusVideos);
     }
   }
 

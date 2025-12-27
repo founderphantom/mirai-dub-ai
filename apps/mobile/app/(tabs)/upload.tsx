@@ -54,8 +54,8 @@ export default function UploadScreen() {
       return;
     }
 
-    // Check credits
-    const hasCredits = credits && (credits.balance > 0 || credits.trialVideosRemaining > 0);
+    // Check credits (balance, trial videos, or bonus videos)
+    const hasCredits = credits && (credits.balance > 0 || credits.trialVideosRemaining > 0 || credits.bonusVideosAvailable > 0);
 
     if (!hasCredits) {
       Alert.alert(
@@ -63,7 +63,7 @@ export default function UploadScreen() {
         "You don't have enough credits to translate this video. Please purchase more credits.",
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Purchase Credits", onPress: () => router.push("/(tabs)/upload") },
+          { text: "Purchase Credits", onPress: () => router.push("/credits") },
         ]
       );
       return;
@@ -279,10 +279,12 @@ export default function UploadScreen() {
                 </View>
               </View>
 
-              {credits.trialVideosRemaining > 0 && (
+              {(credits.trialVideosRemaining > 0 || credits.bonusVideosAvailable > 0) && (
                 <View className="bg-success-50 border border-success-200 rounded-lg p-2 mb-3">
                   <Text className="text-success-700 text-sm text-center">
-                    Includes {credits.trialVideosRemaining} free trial video
+                    {credits.trialVideosRemaining > 0
+                      ? `Includes ${credits.trialVideosRemaining} free trial video`
+                      : `Includes ${credits.bonusVideosAvailable} free videos`}
                   </Text>
                 </View>
               )}
@@ -291,7 +293,7 @@ export default function UploadScreen() {
 
           <Pressable
             className="bg-primary-500 rounded-lg py-3 items-center active:bg-primary-600"
-            onPress={() => router.push("/(tabs)/upload")}
+            onPress={() => router.push("/credits")}
             disabled={isUploading}
           >
             <Text className="text-white font-medium">+ Purchase More Credits</Text>
