@@ -1,8 +1,7 @@
-import { useState, useCallback, memo } from "react";
-import { ScrollView, View, Text, Pressable, TextInput, Image, RefreshControl, ActivityIndicator, FlatList, StyleSheet } from "react-native";
+import { useState, useCallback } from "react";
+import { View, Text, Pressable, TextInput, Image, RefreshControl, ActivityIndicator, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { VideoView, useVideoPlayer } from "expo-video";
 import {
   Search,
   Filter,
@@ -16,7 +15,6 @@ import {
 } from "lucide-react-native";
 import { useVideos, useCredits, formatCredits } from "@/hooks";
 import type { Video as VideoType, VideoStatus } from "@/types/video";
-import { formatDuration } from "@/types/video";
 import { SUPPORTED_LANGUAGES } from "@/lib/constants";
 
 const languageFlags: Record<string, string> = {
@@ -61,30 +59,12 @@ function getLanguageName(code: string): string {
   return lang?.name || code.toUpperCase();
 }
 
-// Video preview frame component for completed videos
-const VideoPreviewFrame = memo(function VideoPreviewFrame({ downloadUrl }: { downloadUrl: string }) {
-  const player = useVideoPlayer(downloadUrl, (p) => {
-    p.currentTime = 1; // Show frame at 1 second
-  });
-
-  return (
-    <VideoView
-      player={player}
-      style={styles.videoPreview}
-      nativeControls={false}
-      contentFit="cover"
-    />
-  );
-});
-
 type VideoCardProps = {
   video: VideoType;
   onPress: () => void;
 };
 
 function VideoCard({ video, onPress }: VideoCardProps) {
-  const durationSeconds = video.durationSeconds || 0;
-
   return (
     <Pressable
       className="bg-white rounded-xl overflow-hidden shadow-raised mb-4"
@@ -92,25 +72,17 @@ function VideoCard({ video, onPress }: VideoCardProps) {
     >
       {/* Thumbnail */}
       <View className="relative">
-        {video.status === "completed" && video.downloadUrl ? (
-          <VideoPreviewFrame downloadUrl={video.downloadUrl} />
-        ) : video.thumbnailUrl ? (
+        {video.thumbnailUrl ? (
           <Image
             source={{ uri: video.thumbnailUrl }}
             className="w-full h-44 bg-neutral-200"
             resizeMode="cover"
           />
         ) : (
-          <View className="w-full h-44 bg-neutral-200 items-center justify-center">
-            <Play size={32} color="#94a3b8" />
+          <View className="w-full h-44 bg-slate-400 items-center justify-center">
+            <Play size={32} color="#fff" />
           </View>
         )}
-        {/* Duration badge */}
-        <View className="absolute bottom-2 right-2 bg-black/70 rounded px-2 py-1">
-          <Text className="text-white text-xs font-medium">
-            {formatDuration(durationSeconds)}
-          </Text>
-        </View>
         {/* Processing overlay */}
         {(video.status === "processing" || video.status === "queued") && (
           <View className="absolute inset-0 bg-black/40 items-center justify-center">
@@ -299,11 +271,10 @@ export default function LibraryScreen() {
             </Text>
           </View>
           <Pressable
-            className="bg-primary-500 rounded-lg px-4 py-2.5 flex-row items-center active:bg-primary-600 flex-shrink-0"
+            className="bg-primary-500 w-10 h-10 rounded-full items-center justify-center active:bg-primary-600"
             onPress={() => router.push("/(tabs)/upload")}
           >
-            <Plus size={18} color="#fff" />
-            <Text className="text-white font-medium ml-1">Upload</Text>
+            <Plus size={20} color="#fff" />
           </Pressable>
         </View>
       </View>
@@ -323,7 +294,10 @@ export default function LibraryScreen() {
             )}
           </Text>
         </View>
-        <Pressable className="bg-primary-50 rounded-lg px-3 py-1.5 active:bg-primary-100">
+        <Pressable
+          className="bg-primary-50 rounded-lg px-3 py-1.5 active:bg-primary-100"
+          onPress={() => router.push("/credits")}
+        >
           <Text className="text-primary-600 font-medium text-sm">+ Add</Text>
         </Pressable>
       </View>
@@ -395,10 +369,3 @@ export default function LibraryScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  videoPreview: {
-    width: '100%',
-    height: 176,
-  },
-});

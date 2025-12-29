@@ -152,12 +152,15 @@ videoRoutes.get("/", zValidator("query", videoListQuerySchema), async (c) => {
 
     const total = countResult?.count || 0;
 
-    // Add thumbnail URLs (placeholder for MVP)
+    // Add thumbnail and download URLs
     const videosWithUrls = userVideos.map((video) => ({
       ...video,
-      thumbnail: video.thumbnailKey
+      thumbnailUrl: video.thumbnailKey
         ? getPublicUrl(c.env.R2_PUBLIC_URL, video.thumbnailKey)
-        : `https://picsum.photos/seed/${video.id}/400/225`, // Placeholder
+        : null,
+      downloadUrl: video.translatedKey
+        ? getPublicUrl(c.env.R2_PUBLIC_URL, video.translatedKey)
+        : null,
     }));
 
     return c.json(paginatedResponse(videosWithUrls, total, page, limit));
@@ -199,9 +202,9 @@ videoRoutes.get("/:id", async (c) => {
     // Build response with URLs
     const videoWithUrls = {
       ...video,
-      thumbnail: video.thumbnailKey
+      thumbnailUrl: video.thumbnailKey
         ? getPublicUrl(c.env.R2_PUBLIC_URL, video.thumbnailKey)
-        : `https://picsum.photos/seed/${video.id}/400/225`,
+        : null,
       downloadUrl: video.translatedKey
         ? getPublicUrl(c.env.R2_PUBLIC_URL, video.translatedKey)
         : null,

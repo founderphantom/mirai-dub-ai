@@ -13,6 +13,7 @@ import {
 } from "../lib/errors";
 import {
   getUploadKey,
+  getThumbnailKey,
   getExtensionFromMimeType,
   existsInR2,
   uploadToR2,
@@ -356,6 +357,65 @@ uploadRoutes.post(
     }
   }
 );
+
+/**
+ * PUT /api/upload/:videoId/thumbnail
+ * Upload a thumbnail image for a video
+ */
+uploadRoutes.put("/:videoId/thumbnail", async (c) => {
+  const user = c.get("user")!;
+  const videoId = c.req.param("videoId");
+  const db = createDb(c.env.DB);
+
+  try {
+    // Verify video belongs to user
+    const video = await db
+      .select()
+      .from(videos)
+      .where(and(eq(videos.id, videoId), eq(videos.userId, user.id)))
+      .get();
+
+    if (!video) {
+      const error = createError(ErrorCodes.NOT_FOUND, undefined, "Video not found");
+      return c.json(formatErrorResponse(error), error.statusCode);
+    }
+
+    // Get image body
+    const imageBuffer = await c.req.arrayBuffer();
+
+    if (!imageBuffer || imageBuffer.byteLength === 0) {
+      const error = createError(
+        ErrorCodes.INVALID_REQUEST,
+        undefined,
+        "No thumbnail image provided"
+      );
+      return c.json(formatErrorResponse(error), error.statusCode);
+    }
+
+    // Upload to R2
+    const thumbnailKey = getThumbnailKey(videoId);
+    await uploadToR2(c.env.STORAGE, thumbnailKey, imageBuffer, "image/jpeg");
+
+    // Update video record with thumbnail key
+    await db
+      .update(videos)
+      .set({
+        thumbnailKey,
+        updatedAt: new Date(),
+      })
+      .where(eq(videos.id, videoId));
+
+    return c.json(successResponse({ success: true, thumbnailKey }));
+  } catch (error: any) {
+    console.error("Error uploading thumbnail:", error);
+    const err = createError(
+      ErrorCodes.INTERNAL_ERROR,
+      undefined,
+      `Thumbnail upload failed: ${error.message}`
+    );
+    return c.json(formatErrorResponse(err), err.statusCode);
+  }
+});
 
 /**
  * DELETE /api/upload/:videoId/abort

@@ -101,6 +101,9 @@ export async function handleVideoProcessing(
         })
         .where(eq(videos.id, videoId));
 
+      // Note: Thumbnails are now generated on the mobile app before upload
+      // and stored via PUT /api/upload/:videoId/thumbnail endpoint
+
       // Message processed successfully - Replicate will call our webhook when done
       message.ack();
 

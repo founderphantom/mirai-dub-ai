@@ -104,6 +104,48 @@ export const uploadApi = {
   },
 
   /**
+   * Upload a thumbnail image for a video
+   */
+  async uploadThumbnail(videoId: string, thumbnailUri: string): Promise<void> {
+    const headers: Record<string, string> = {
+      "Content-Type": "image/jpeg",
+    };
+
+    let credentials: RequestCredentials = "include";
+
+    // On native, manually add cookies (credentials: "include" doesn't work in RN)
+    if (Platform.OS !== "web") {
+      const cookies = authClient.getCookie();
+      if (cookies) {
+        headers["Cookie"] = cookies;
+      }
+      credentials = "omit";
+    }
+
+    // Fetch the thumbnail from local URI and convert to blob
+    const response = await fetch(thumbnailUri);
+    const blob = await response.blob();
+
+    // Upload to API
+    const uploadResponse = await fetch(
+      `${API_CONFIG.baseUrl}/api/upload/${videoId}/thumbnail`,
+      {
+        method: "PUT",
+        headers,
+        body: blob,
+        credentials,
+      }
+    );
+
+    if (!uploadResponse.ok) {
+      const error = await uploadResponse
+        .json()
+        .catch(() => ({ error: { message: "Thumbnail upload failed" } }));
+      throw new Error(error.error?.message || "Thumbnail upload failed");
+    }
+  },
+
+  /**
    * Upload a complete video file with progress tracking
    * Handles chunking automatically for large files
    */
@@ -115,7 +157,8 @@ export const uploadApi = {
       title?: string;
       durationSeconds?: number;
     },
-    onProgress?: UploadProgressCallback
+    onProgress?: UploadProgressCallback,
+    thumbnailUri?: string | null
   ): Promise<UploadCompleteResponse> {
     // 1. Initiate upload
     const initResponse = await this.initiateUpload({
@@ -131,6 +174,15 @@ export const uploadApi = {
     const { videoId } = initResponse;
 
     try {
+      // 1.5. Upload thumbnail if provided (non-blocking, don't fail upload if thumbnail fails)
+      if (thumbnailUri) {
+        try {
+          await this.uploadThumbnail(videoId, thumbnailUri);
+        } catch (err) {
+          console.warn("Thumbnail upload failed, continuing with video upload:", err);
+        }
+      }
+
       // 2. Read file and upload in chunks
       const response = await fetch(file.uri);
       const blob = await response.blob();

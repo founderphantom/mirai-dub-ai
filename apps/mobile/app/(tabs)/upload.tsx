@@ -14,6 +14,7 @@ import { useVideoStore } from "@/stores/videoStore";
 import { uploadApi } from "@/lib/api";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { detectMimeType } from "@/lib/utils/mimeType";
+import { generateThumbnail } from "@/lib/utils/thumbnail";
 
 const tips = [
   "Use videos with clear audio and minimal background noise",
@@ -76,6 +77,9 @@ export default function UploadScreen() {
       // Get file name without extension for title
       const title = selectedFile.name?.replace(/\.[^/.]+$/, "") || "Untitled Video";
 
+      // Generate thumbnail at 1 second before upload
+      const thumbnailUri = await generateThumbnail(selectedFile.uri);
+
       // Upload video with progress tracking
       // Use detectMimeType to handle browser inconsistencies with MIME type detection
       const fileName = selectedFile.name || "video.mp4";
@@ -93,7 +97,8 @@ export default function UploadScreen() {
         },
         (progress) => {
           setUploading(true, progress);
-        }
+        },
+        thumbnailUri
       );
 
       setCurrentUploadVideoId(video.video.id);
