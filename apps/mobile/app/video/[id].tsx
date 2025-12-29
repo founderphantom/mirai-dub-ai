@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from "react";
-import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, Linking } from "react-native";
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { useState, useCallback } from "react";
+import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, Linking, StyleSheet } from "react-native";
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -56,11 +56,18 @@ export default function VideoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isDownloading, setIsDownloading] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const videoRef = useRef<Video>(null);
 
   // Fetch video by ID
   const { data: video, isLoading, isError, error } = useVideo(id || "");
   const deleteVideoMutation = useDeleteVideo();
+
+  // Create video player for completed videos
+  const player = useVideoPlayer(
+    video?.status === "completed" && video?.downloadUrl ? video.downloadUrl : null,
+    (p) => {
+      p.loop = false;
+    }
+  );
 
   const handleDownload = useCallback(async () => {
     if (!video || !id) return;
@@ -106,12 +113,6 @@ export default function VideoDetailScreen() {
     }
   }, [video, id]);
 
-  const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (!status.isLoaded && status.error) {
-      console.error('Video playback error:', status.error);
-      setVideoError(true);
-    }
-  }, []);
 
   const handleDelete = useCallback(() => {
     Alert.alert(
@@ -215,19 +216,13 @@ export default function VideoDetailScreen() {
         {/* Video Preview/Player */}
         <View className="mx-4 rounded-xl overflow-hidden mb-6">
           <View className="relative">
-            {isCompleted && video.downloadUrl && !videoError ? (
+            {isCompleted && video.downloadUrl && player && !videoError ? (
               // Show video player for completed videos
-              <Video
-                ref={videoRef}
-                source={{ uri: video.downloadUrl }}
-                style={{ width: '100%', height: 208 }}
-                useNativeControls
-                resizeMode={ResizeMode.CONTAIN}
-                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                onError={(error) => {
-                  console.error('Video error:', error);
-                  setVideoError(true);
-                }}
+              <VideoView
+                player={player}
+                style={styles.videoPlayer}
+                nativeControls
+                contentFit="contain"
               />
             ) : (
               // Show thumbnail for non-completed or error states
@@ -444,3 +439,10 @@ export default function VideoDetailScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  videoPlayer: {
+    width: '100%',
+    height: 208,
+  },
+});

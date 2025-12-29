@@ -171,20 +171,24 @@ creditRoutes.post(
         return c.json(formatErrorResponse(error), error.statusCode);
       }
 
-      // Create Polar client
-      const polar = createPolarClient(c.env.POLAR_ACCESS_TOKEN);
+      // Create Polar client (uses sandbox server in development, production server in production)
+      const polar = createPolarClient(c.env.POLAR_ACCESS_TOKEN, c.env.ENVIRONMENT);
+
+      // Build success URL - Polar requires HTTP/HTTPS, so we always use our redirect endpoint
+      // (ignore client-provided successUrl which may be a deep link like miraidub://)
+      const apiBaseUrl = c.env.API_BASE_URL;
+      const checkoutSuccessUrl = `${apiBaseUrl}/checkout/success`;
 
       // Create checkout session
       const { checkoutUrl, checkoutId } = await createCheckoutSession(polar, {
-        productPriceId: creditPackage.polarProductId,
+        productId: creditPackage.polarProductId,
         customerEmail: dbUser.email,
         metadata: {
           userId: user.id,
           packageId: creditPackage.id,
           creditsAmount: creditPackage.minutes,
         },
-        successUrl: successUrl || "miraidub://purchase/success",
-        cancelUrl: cancelUrl || "miraidub://purchase/cancel",
+        successUrl: checkoutSuccessUrl,
       });
 
       return c.json(

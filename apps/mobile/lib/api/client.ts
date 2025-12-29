@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { API_CONFIG } from "@/lib/constants";
 import { authClient } from "./auth";
 
@@ -60,20 +61,24 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      // Get cookies from Better Auth for Expo compatibility
-      const cookies = (await import("./auth")).authClient.getCookie();
       console.log(`[API ${method}] ${endpoint}`);
-      console.log(`[API ${method}] Cookies:`, cookies || "none");
 
-      // Build headers with cookies for React Native/Expo
+      // Build headers
       const requestHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         ...headers,
       };
 
-      // Manually add cookies for Expo (credentials: "include" doesn't work in RN)
-      if (cookies) {
-        requestHeaders["Cookie"] = cookies;
+      let credentials: RequestCredentials = "include";
+
+      // On native, manually add cookies (credentials: "include" doesn't work in RN)
+      if (Platform.OS !== "web") {
+        const cookies = (await import("./auth")).authClient.getCookie();
+        console.log(`[API ${method}] Cookies:`, cookies || "none");
+        if (cookies) {
+          requestHeaders["Cookie"] = cookies;
+        }
+        credentials = "omit";
       }
 
       const response = await fetch(url, {
@@ -81,7 +86,7 @@ class ApiClient {
         headers: requestHeaders,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
-        credentials: "omit", // Use "omit" when manually setting cookies (Expo best practice)
+        credentials,
       });
 
       clearTimeout(timeoutId);
@@ -141,20 +146,23 @@ class ApiClient {
   async uploadRaw(endpoint: string, body: BodyInit, headers: Record<string, string> = {}): Promise<Response> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    // Get cookies from Better Auth for Expo compatibility
-    const cookies = (await import("./auth")).authClient.getCookie();
     const requestHeaders: Record<string, string> = { ...headers };
+    let credentials: RequestCredentials = "include";
 
-    // Manually add cookies for Expo
-    if (cookies) {
-      requestHeaders["Cookie"] = cookies;
+    // On native, manually add cookies (credentials: "include" doesn't work in RN)
+    if (Platform.OS !== "web") {
+      const cookies = (await import("./auth")).authClient.getCookie();
+      if (cookies) {
+        requestHeaders["Cookie"] = cookies;
+      }
+      credentials = "omit";
     }
 
     const response = await fetch(url, {
       method: "PUT",
       headers: requestHeaders,
       body,
-      credentials: "omit", // Use "omit" when manually setting cookies (Expo best practice)
+      credentials,
     });
 
     if (!response.ok) {

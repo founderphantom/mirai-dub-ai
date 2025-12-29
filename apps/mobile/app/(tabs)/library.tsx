@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
-import { ScrollView, View, Text, Pressable, TextInput, Image, RefreshControl, ActivityIndicator, FlatList } from "react-native";
+import { useState, useCallback, memo } from "react";
+import { ScrollView, View, Text, Pressable, TextInput, Image, RefreshControl, ActivityIndicator, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { VideoView, useVideoPlayer } from "expo-video";
 import {
   Search,
   Filter,
@@ -14,7 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react-native";
 import { useVideos, useCredits, formatCredits } from "@/hooks";
-import type { Video, VideoStatus } from "@/types/video";
+import type { Video as VideoType, VideoStatus } from "@/types/video";
 import { formatDuration } from "@/types/video";
 import { SUPPORTED_LANGUAGES } from "@/lib/constants";
 
@@ -60,8 +61,24 @@ function getLanguageName(code: string): string {
   return lang?.name || code.toUpperCase();
 }
 
+// Video preview frame component for completed videos
+const VideoPreviewFrame = memo(function VideoPreviewFrame({ downloadUrl }: { downloadUrl: string }) {
+  const player = useVideoPlayer(downloadUrl, (p) => {
+    p.currentTime = 1; // Show frame at 1 second
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.videoPreview}
+      nativeControls={false}
+      contentFit="cover"
+    />
+  );
+});
+
 type VideoCardProps = {
-  video: Video;
+  video: VideoType;
   onPress: () => void;
 };
 
@@ -75,7 +92,9 @@ function VideoCard({ video, onPress }: VideoCardProps) {
     >
       {/* Thumbnail */}
       <View className="relative">
-        {video.thumbnailUrl ? (
+        {video.status === "completed" && video.downloadUrl ? (
+          <VideoPreviewFrame downloadUrl={video.downloadUrl} />
+        ) : video.thumbnailUrl ? (
           <Image
             source={{ uri: video.thumbnailUrl }}
             className="w-full h-44 bg-neutral-200"
@@ -222,7 +241,7 @@ export default function LibraryScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderVideo = useCallback(
-    ({ item }: { item: Video }) => (
+    ({ item }: { item: VideoType }) => (
       <VideoCard
         video={item}
         onPress={() => {
@@ -271,16 +290,16 @@ export default function LibraryScreen() {
       {/* Header */}
       <View className="px-4 pt-4 pb-3 bg-white border-b border-neutral-200">
         <View className="flex-row items-center justify-between mb-1">
-          <View>
+          <View className="flex-1 mr-3">
             <Text className="text-2xl font-bold text-neutral-900">
               Video Library
             </Text>
-            <Text className="text-neutral-500">
-              Manage and download your translated videos
+            <Text className="text-neutral-500" numberOfLines={1}>
+              Manage your translated videos
             </Text>
           </View>
           <Pressable
-            className="bg-primary-500 rounded-lg px-4 py-2.5 flex-row items-center active:bg-primary-600"
+            className="bg-primary-500 rounded-lg px-4 py-2.5 flex-row items-center active:bg-primary-600 flex-shrink-0"
             onPress={() => router.push("/(tabs)/upload")}
           >
             <Plus size={18} color="#fff" />
@@ -376,3 +395,10 @@ export default function LibraryScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  videoPreview: {
+    width: '100%',
+    height: 176,
+  },
+});

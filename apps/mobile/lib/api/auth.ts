@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import { anonymousClient } from "better-auth/client/plugins";
-import * as SecureStore from "expo-secure-store";
+import { storage } from "@/lib/storage";
 import { API_CONFIG } from "@/lib/constants";
 
 // Create Better Auth client for Expo
@@ -11,7 +11,7 @@ export const authClient = createAuthClient({
     expoClient({
       scheme: "miraidub",
       storagePrefix: "miraidub",
-      storage: SecureStore,
+      storage: storage,
     }),
     anonymousClient(),
   ],

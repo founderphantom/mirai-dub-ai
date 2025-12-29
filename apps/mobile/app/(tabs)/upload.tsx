@@ -13,6 +13,7 @@ import { useCredits, formatCredits } from "@/hooks";
 import { useVideoStore } from "@/stores/videoStore";
 import { uploadApi } from "@/lib/api";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
+import { detectMimeType } from "@/lib/utils/mimeType";
 
 const tips = [
   "Use videos with clear audio and minimal background noise",
@@ -76,11 +77,13 @@ export default function UploadScreen() {
       const title = selectedFile.name?.replace(/\.[^/.]+$/, "") || "Untitled Video";
 
       // Upload video with progress tracking
+      // Use detectMimeType to handle browser inconsistencies with MIME type detection
+      const fileName = selectedFile.name || "video.mp4";
       const video = await uploadApi.uploadVideo(
         {
           uri: selectedFile.uri,
-          name: selectedFile.name || "video.mp4",
-          type: selectedFile.mimeType || "video/mp4",
+          name: fileName,
+          type: detectMimeType(fileName, selectedFile.mimeType),
           size: selectedFile.size || 0,
         },
         {

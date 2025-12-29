@@ -387,8 +387,18 @@ export const ANIMATION_DURATIONS = {
 export const FILE_CONSTRAINTS = {
   maxSizeMB: 500,
   maxSizeBytes: 500 * 1024 * 1024,
-  supportedFormats: ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"],
-  supportedExtensions: [".mp4", ".mov", ".avi", ".webm"],
+  // Standard MIME types plus aliases for web browser compatibility
+  supportedFormats: [
+    "video/mp4",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/webm",
+    "video/3gpp",
+    // MIME type aliases that browsers may return
+    "video/mov",
+    "video/x-m4v",
+  ],
+  supportedExtensions: [".mp4", ".mov", ".avi", ".webm", ".m4v", ".3gp"],
   maxDurationMinutes: 60,
 } as const;
 

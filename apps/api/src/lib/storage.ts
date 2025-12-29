@@ -163,27 +163,54 @@ export async function deleteMultipleFromR2(
 }
 
 /**
- * Supported video MIME types
+ * Supported video MIME types (standard)
  */
 export const SUPPORTED_MIME_TYPES = [
   "video/mp4",
   "video/quicktime",
   "video/webm",
   "video/x-msvideo",
+  "video/3gpp",
 ] as const;
 
 /**
- * Check if MIME type is supported
+ * MIME type aliases - maps non-standard MIME types to their standard equivalents
+ * Different browsers return different MIME types for the same file format
  */
-export function isSupportedMimeType(mimeType: string): boolean {
-  return SUPPORTED_MIME_TYPES.includes(mimeType as (typeof SUPPORTED_MIME_TYPES)[number]);
+const MIME_ALIASES: Record<string, string> = {
+  "video/mov": "video/quicktime",
+  "video/x-quicktime": "video/quicktime",
+  "video/x-m4v": "video/mp4",
+  "video/msvideo": "video/x-msvideo",
+  "video/x-ms-video": "video/x-msvideo",
+};
+
+/**
+ * Normalize a MIME type to its standard form
+ * Handles browser-specific variations
+ */
+export function normalizeMimeType(mimeType: string): string {
+  const normalized = mimeType.toLowerCase().trim();
+  return MIME_ALIASES[normalized] || normalized;
 }
 
 /**
- * Get file extension from MIME type
+ * Check if MIME type is supported (including aliases)
+ */
+export function isSupportedMimeType(mimeType: string): boolean {
+  const normalized = normalizeMimeType(mimeType);
+  return (
+    SUPPORTED_MIME_TYPES.includes(normalized as (typeof SUPPORTED_MIME_TYPES)[number]) ||
+    Object.keys(MIME_ALIASES).includes(mimeType.toLowerCase())
+  );
+}
+
+/**
+ * Get file extension from MIME type (handles aliases)
  */
 export function getExtensionFromMimeType(mimeType: string): string {
-  switch (mimeType) {
+  const normalized = normalizeMimeType(mimeType);
+  switch (normalized) {
     case "video/mp4":
       return "mp4";
     case "video/quicktime":
@@ -192,6 +219,8 @@ export function getExtensionFromMimeType(mimeType: string): string {
       return "webm";
     case "video/x-msvideo":
       return "avi";
+    case "video/3gpp":
+      return "3gp";
     default:
       return "mp4";
   }

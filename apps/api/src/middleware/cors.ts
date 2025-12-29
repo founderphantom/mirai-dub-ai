@@ -19,6 +19,9 @@ export const corsMiddleware = cors({
     "https://miraidub.ai",
     "https://www.miraidub.ai",
     "https://api.miraidub.ai",
+
+    // Cloudflare Workers web app
+    "https://mirai-dub-web.founder-968.workers.dev",
   ],
   credentials: true,
   allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -28,6 +31,8 @@ export const corsMiddleware = cors({
     "X-Requested-With",
     "Accept",
     "Origin",
+    "X-Part-Number",
+    "X-Total-Parts",
   ],
   exposeHeaders: ["Content-Length", "Content-Type"],
   maxAge: 86400, // 24 hours

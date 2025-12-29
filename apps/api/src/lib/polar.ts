@@ -47,9 +47,16 @@ export function getCreditPackage(packageId: string) {
 
 /**
  * Create Polar client
+ * Uses sandbox server in development, production server in production
  */
-export function createPolarClient(accessToken: string): Polar {
-  return new Polar({ accessToken });
+export function createPolarClient(
+  accessToken: string,
+  environment: "development" | "production" = "development"
+): Polar {
+  return new Polar({
+    accessToken,
+    server: environment === "development" ? "sandbox" : "production",
+  });
 }
 
 /**
@@ -67,17 +74,16 @@ export interface CheckoutMetadata {
 export async function createCheckoutSession(
   polar: Polar,
   params: {
-    productPriceId: string;
+    productId: string;
     customerEmail: string;
     metadata: CheckoutMetadata;
-    successUrl?: string;
-    cancelUrl?: string;
+    successUrl: string;
   }
 ): Promise<{ checkoutUrl: string; checkoutId: string }> {
   const checkout = await polar.checkouts.create({
-    productPriceId: params.productPriceId,
+    productId: params.productId,
     customerEmail: params.customerEmail,
-    successUrl: params.successUrl || "miraidub://purchase/success",
+    successUrl: params.successUrl,
     metadata: params.metadata as unknown as Record<string, string>,
   });
 

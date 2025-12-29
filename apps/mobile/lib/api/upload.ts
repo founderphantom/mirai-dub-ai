@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { apiClient } from "./client";
 import { authClient } from "./auth";
 import { API_CONFIG } from "@/lib/constants";
@@ -51,16 +52,21 @@ export const uploadApi = {
     partNumber: number,
     totalParts: number
   ): Promise<void> {
-    // Get cookies from Better Auth for Expo compatibility
-    const cookies = authClient.getCookie();
     const headers: Record<string, string> = {
       "Content-Type": "application/octet-stream", // Raw binary
       "X-Part-Number": partNumber.toString(),
       "X-Total-Parts": totalParts.toString(),
     };
 
-    if (cookies) {
-      headers["Cookie"] = cookies;
+    let credentials: RequestCredentials = "include";
+
+    // On native, manually add cookies (credentials: "include" doesn't work in RN)
+    if (Platform.OS !== "web") {
+      const cookies = authClient.getCookie();
+      if (cookies) {
+        headers["Cookie"] = cookies;
+      }
+      credentials = "omit";
     }
 
     // Send Blob directly (NOT FormData)
@@ -68,7 +74,7 @@ export const uploadApi = {
       method: "PUT",
       headers,
       body: chunk, // Raw binary Blob
-      credentials: "omit", // Use "omit" when manually setting cookies (Expo best practice)
+      credentials,
     });
 
     if (!response.ok) {

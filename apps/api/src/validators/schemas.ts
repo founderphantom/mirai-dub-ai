@@ -13,10 +13,15 @@ export const uploadInitiateSchema = z.object({
   fileName: z.string().min(1).max(255),
   fileSize: z.number().positive().max(500 * 1024 * 1024), // 500MB max
   contentType: z.enum([
+    // Standard MIME types
     "video/mp4",
     "video/quicktime",
     "video/webm",
     "video/x-msvideo",
+    // MIME type aliases that browsers may return
+    "video/mov",      // Some browsers return this for .mov instead of video/quicktime
+    "video/x-m4v",    // Some browsers return this for .m4v
+    "video/3gpp",     // 3GP format (common on mobile)
   ]),
   sourceLanguage: languageCodeSchema.optional(), // Optional for auto-detect
   targetLanguage: languageCodeSchema,

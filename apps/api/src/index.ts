@@ -13,6 +13,7 @@ import { uploadRoutes } from "./routes/upload.routes";
 import { jobRoutes } from "./routes/jobs.routes";
 import { creditRoutes } from "./routes/credits.routes";
 import { webhookRoutes } from "./routes/webhooks.routes";
+import { checkoutRedirectRoutes } from "./routes/checkout-redirect.routes";
 
 // Queue consumer import
 import { handleVideoProcessing } from "./consumers/video-processor";
@@ -60,6 +61,9 @@ app.route("/api/upload", uploadRoutes);
 app.route("/api/jobs", jobRoutes);
 app.route("/api/credits", creditRoutes);
 app.route("/api/webhooks", webhookRoutes);
+
+// Checkout redirect routes (public, no auth - for Polar payment callbacks)
+app.route("/checkout", checkoutRedirectRoutes);
 
 // Global error handler
 app.onError((err, c) => {
