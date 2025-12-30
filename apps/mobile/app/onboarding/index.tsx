@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
-import { View, Text, Pressable, Dimensions, Image, FlatList, Animated } from "react-native";
+import { View, Text, Pressable, Dimensions, Image, FlatList, Animated, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Sparkles, Upload, Languages, Download, Users, Gift, ArrowRight } from "lucide-react-native";
 import { useAuthStore } from "@/stores/authStore";
+import { CarouselWrapper } from "@/components/onboarding/CarouselWrapper";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -74,10 +75,27 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
+  const handleWebScroll = (offsetX: number) => {
+    const currentSlide = Math.round(offsetX / SCREEN_WIDTH);
+    if (currentSlide !== currentIndex && currentSlide >= 0 && currentSlide < slides.length) {
+      setCurrentIndex(currentSlide);
+    }
+  };
+
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-      setCurrentIndex(currentIndex + 1);
+      const nextIndex = currentIndex + 1;
+      if (Platform.OS === 'web') {
+        // Web-specific scroll using scrollTo
+        flatListRef.current?.scrollTo({
+          x: nextIndex * SCREEN_WIDTH,
+          animated: true
+        });
+      } else {
+        // Native platforms use scrollToIndex
+        flatListRef.current?.scrollToIndex({ index: nextIndex });
+      }
+      setCurrentIndex(nextIndex);
     } else {
       handleComplete();
     }
@@ -166,7 +184,7 @@ export default function OnboardingScreen() {
       </View>
 
       {/* Slides */}
-      <FlatList
+      <CarouselWrapper
         ref={flatListRef}
         data={slides}
         renderItem={renderSlide}
@@ -178,8 +196,9 @@ export default function OnboardingScreen() {
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false }
         )}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onScrollUpdate={Platform.OS === 'web' ? handleWebScroll : undefined}
+        onViewableItemsChanged={Platform.OS !== 'web' ? onViewableItemsChanged : undefined}
+        viewabilityConfig={Platform.OS !== 'web' ? viewabilityConfig : undefined}
         bounces={false}
       />
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, Linking, StyleSheet } from "react-native";
+import { View, Text, Pressable, Image, ScrollView, ActivityIndicator, Alert, Linking, StyleSheet, Platform } from "react-native";
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -51,6 +51,26 @@ function formatFileSize(bytes?: number): string {
   return `${mb.toFixed(1)} MB`;
 }
 
+async function downloadOnWeb(url: string, filename: string): Promise<void> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    // Fallback: open URL in new tab
+    window.open(url, '_blank');
+  }
+}
+
 export default function VideoDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -74,16 +94,18 @@ export default function VideoDetailScreen() {
 
     try {
       setIsDownloading(true);
-
-      // Get signed download URL from API
       const { url: downloadUrl } = await videosApi.getDownloadUrl(id);
 
-      // Open the signed download URL in browser
-      const supported = await Linking.canOpenURL(downloadUrl);
-      if (supported) {
-        await Linking.openURL(downloadUrl);
+      if (Platform.OS === 'web') {
+        const filename = `${video.title.replace(/[^a-z0-9]/gi, '_')}_${video.targetLanguage}.mp4`;
+        await downloadOnWeb(downloadUrl, filename);
       } else {
-        Alert.alert("Error", "Unable to open download link");
+        const supported = await Linking.canOpenURL(downloadUrl);
+        if (supported) {
+          await Linking.openURL(downloadUrl);
+        } else {
+          Alert.alert("Error", "Unable to open download link");
+        }
       }
     } catch (error) {
       console.error("Download failed:", error);
