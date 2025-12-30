@@ -12,7 +12,7 @@ export type CreditBalance = {
 export type CreditPackage = {
   id: string;
   name: string;
-  minutes: number;
+  seconds: number;
   price: number;
   popular?: boolean;
 };

@@ -232,7 +232,8 @@ webhookRoutes.post("/replicate", async (c) => {
           .get();
 
         if (user) {
-          const creditsToDeduct = Math.ceil((video.durationSeconds || 60) / 60);
+          // Credits are now in seconds (1 credit = 1 second of video)
+          const creditsToDeduct = video.durationSeconds || 60;
           let newBalance = user.creditsBalance;
           let creditSource = "credits";
 

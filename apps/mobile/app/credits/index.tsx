@@ -74,8 +74,8 @@ export default function CreditsScreen() {
     }
   };
 
-  const getPricePerMinute = (price: number, minutes: number) => {
-    return (price / minutes).toFixed(2);
+  const getPricePerSecond = (price: number, seconds: number) => {
+    return (price / seconds).toFixed(3);
   };
 
   return (
@@ -110,7 +110,7 @@ export default function CreditsScreen() {
                 {formatCredits(credits?.balance || 0)}
               </Text>
               <Text className="text-white/70 text-sm mt-1">
-                {credits?.balance || 0} minutes of video translation
+                {credits?.balance || 0} seconds of video translation
               </Text>
               {(credits?.trialVideosRemaining ?? 0) > 0 && (
                 <View className="mt-3 bg-white/20 rounded-lg px-3 py-2">
@@ -159,7 +159,7 @@ export default function CreditsScreen() {
             Choose a Package
           </Text>
           <Text className="text-neutral-500 text-sm mt-1">
-            More credits = better value per minute
+            More credits = better value per second
           </Text>
         </View>
 
@@ -201,7 +201,7 @@ export default function CreditsScreen() {
                         {pkg.name}
                       </Text>
                       <Text className="text-neutral-500 text-sm">
-                        {pkg.minutes} minutes of video
+                        {pkg.seconds} seconds of video
                       </Text>
                     </View>
 
@@ -210,7 +210,7 @@ export default function CreditsScreen() {
                         ${pkg.price}
                       </Text>
                       <Text className="text-neutral-400 text-xs">
-                        ${getPricePerMinute(pkg.price, pkg.minutes)}/min
+                        ${getPricePerSecond(pkg.price, pkg.seconds)}/sec
                       </Text>
                     </View>
                   </View>

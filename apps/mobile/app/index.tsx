@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { Redirect } from "expo-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
@@ -73,8 +73,8 @@ export default function Index() {
     );
   }
 
-  // If user hasn't completed onboarding, show onboarding
-  if (!hasCompletedOnboarding) {
+  // If user hasn't completed onboarding, show onboarding (skip on web)
+  if (!hasCompletedOnboarding && Platform.OS !== 'web') {
     return <Redirect href="/onboarding" />;
   }
 

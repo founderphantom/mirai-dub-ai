@@ -69,7 +69,7 @@ export function useCheckout() {
 /**
  * Helper hook to check if user has enough credits for a duration
  */
-export function useHasCredits(minutesNeeded: number) {
+export function useHasCredits(secondsNeeded: number) {
   const { data: credits } = useCredits();
 
   if (!credits) return { hasCredits: false, canUseTrial: false, canUseBonus: false };
@@ -84,27 +84,35 @@ export function useHasCredits(minutesNeeded: number) {
     return { hasCredits: true, canUseTrial: false, canUseBonus: true };
   }
 
-  // Check credit balance
+  // Check credit balance (in seconds)
   return {
-    hasCredits: credits.balance >= minutesNeeded,
+    hasCredits: credits.balance >= secondsNeeded,
     canUseTrial: false,
     canUseBonus: false,
   };
 }
 
 /**
- * Helper to format credit balance for display
+ * Helper to format credit balance (in seconds) for display
  */
-export function formatCredits(minutes: number): string {
-  if (minutes >= 60) {
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
+export function formatCredits(seconds: number): string {
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const remainingMinutes = Math.floor((seconds % 3600) / 60);
     if (remainingMinutes === 0) {
       return `${hours}h`;
     }
     return `${hours}h ${remainingMinutes}m`;
   }
-  return `${minutes}m`;
+  if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (remainingSeconds === 0) {
+      return `${minutes}m`;
+    }
+    return `${minutes}m ${remainingSeconds}s`;
+  }
+  return `${seconds}s`;
 }
 
 export default useCredits;

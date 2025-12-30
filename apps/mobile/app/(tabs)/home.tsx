@@ -1,9 +1,11 @@
+import React from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Sparkles, Globe, Zap, Shield, Upload, Languages, Cpu, Download, Play, User as UserIcon, CreditCard } from "lucide-react-native";
+import { Sparkles, Globe, Zap, Shield, Upload, Languages, Cpu, Download, Play, User as UserIcon, CreditCard, ArrowRight } from "lucide-react-native";
 import { useSession } from "@/lib/api/auth";
-import { useCredits, formatCredits } from "@/hooks";
+import { useCredits, formatCredits, useResponsive } from "@/hooks";
+import { ResponsiveContainer, Footer } from "@/components/layout";
 
 // Feature card data
 const features = [
@@ -57,10 +59,77 @@ const steps = [
   },
 ];
 
+// Desktop "How It Works" - horizontal row with arrows
+function HowItWorksDesktop() {
+  return (
+    <View className="flex-row items-start justify-center">
+      {steps.map((step, index) => (
+        <React.Fragment key={step.number}>
+          <View
+            className="bg-white border border-neutral-200 rounded-lg p-4"
+            style={{ width: 200 }}
+          >
+            <View className="w-8 h-8 bg-primary-500 rounded-full items-center justify-center mb-3">
+              <Text className="text-white font-bold text-sm">{step.number}</Text>
+            </View>
+            <View className="w-10 h-10 bg-neutral-100 rounded-lg items-center justify-center mb-3">
+              <step.icon size={20} color="#334155" />
+            </View>
+            <Text className="text-neutral-900 font-semibold text-base mb-1">
+              {step.title}
+            </Text>
+            <Text className="text-neutral-500 text-sm leading-5">
+              {step.description}
+            </Text>
+          </View>
+          {index < steps.length - 1 && (
+            <View className="px-3 pt-16">
+              <ArrowRight size={24} color="#94a3b8" />
+            </View>
+          )}
+        </React.Fragment>
+      ))}
+    </View>
+  );
+}
+
+// Mobile "How It Works" - horizontal scroll
+function HowItWorksMobile() {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingRight: 16 }}
+    >
+      {steps.map((step, index) => (
+        <View
+          key={index}
+          className="bg-white border border-neutral-200 rounded-lg p-4 mr-3"
+          style={{ width: 200 }}
+        >
+          <View className="w-8 h-8 bg-primary-500 rounded-full items-center justify-center mb-3">
+            <Text className="text-white font-bold text-sm">{step.number}</Text>
+          </View>
+          <View className="w-10 h-10 bg-neutral-100 rounded-lg items-center justify-center mb-3">
+            <step.icon size={20} color="#334155" />
+          </View>
+          <Text className="text-neutral-900 font-semibold text-base mb-1">
+            {step.title}
+          </Text>
+          <Text className="text-neutral-500 text-sm leading-5">
+            {step.description}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { data: session } = useSession();
   const { data: credits } = useCredits();
+  const { showDesktopLayout } = useResponsive();
   const user = session?.user;
   const isSignedIn = user && !user.isAnonymous;
 
@@ -73,51 +142,55 @@ export default function HomeScreen() {
     credits.bonusVideosAvailable === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header */}
-      <View className="flex-row justify-between items-center px-4 py-3 border-b border-neutral-100 bg-white">
-        <View className="flex-row items-center">
-          <View className="w-8 h-8 bg-primary-500 rounded-lg items-center justify-center mr-2">
-            <Sparkles size={18} color="white" />
+    <SafeAreaView className="flex-1 bg-white" edges={showDesktopLayout ? [] : ["top"]}>
+      {/* Mobile Header - hidden on desktop (handled by DesktopNavBar) */}
+      {!showDesktopLayout && (
+        <View className="flex-row justify-between items-center px-4 py-3 border-b border-neutral-100 bg-white">
+          <View className="flex-row items-center">
+            <View className="w-8 h-8 bg-primary-500 rounded-lg items-center justify-center mr-2">
+              <Sparkles size={18} color="white" />
+            </View>
+            <Text className="text-lg font-bold text-neutral-900">Mirai Dub AI</Text>
           </View>
-          <Text className="text-lg font-bold text-neutral-900">Mirai Dub AI</Text>
+          <Pressable
+            onPress={() => {
+              if (isSignedIn) {
+                router.push("/account");
+              } else {
+                router.push("/(auth)/login");
+              }
+            }}
+            className="flex-row items-center bg-primary-50 active:bg-primary-100 px-3 py-2 rounded-full"
+          >
+            <UserIcon size={16} color="#2563eb" className="mr-1.5" />
+            <Text className="text-primary-600 font-semibold text-sm">
+              {isSignedIn ? "Account" : "Sign In"}
+            </Text>
+          </Pressable>
         </View>
-        <Pressable
-          onPress={() => {
-            if (isSignedIn) {
-              router.push("/account");
-            } else {
-              router.push("/(auth)/login");
-            }
-          }}
-          className="flex-row items-center bg-primary-50 active:bg-primary-100 px-3 py-2 rounded-full"
-        >
-          <UserIcon size={16} color="#2563eb" className="mr-1.5" />
-          <Text className="text-primary-600 font-semibold text-sm">
-            {isSignedIn ? "Account" : "Sign In"}
-          </Text>
-        </Pressable>
-      </View>
+      )}
 
       {/* Low Credits Banner */}
       {hasLowCredits && (
-        <Pressable
-          className="mx-4 mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 flex-row items-center active:bg-amber-100"
-          onPress={() => router.push("/credits")}
-        >
-          <CreditCard size={18} color="#d97706" />
-          <View className="flex-1 ml-3">
-            <Text className="text-amber-800 font-medium text-sm">
-              Low on credits ({formatCredits(credits?.balance || 0)} left)
-            </Text>
-          </View>
+        <ResponsiveContainer>
           <Pressable
-            className="bg-amber-500 px-3 py-1.5 rounded-lg active:bg-amber-600"
+            className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 flex-row items-center active:bg-amber-100"
             onPress={() => router.push("/credits")}
           >
-            <Text className="text-white text-xs font-semibold">Add More</Text>
+            <CreditCard size={18} color="#d97706" />
+            <View className="flex-1 ml-3">
+              <Text className="text-amber-800 font-medium text-sm">
+                Low on credits ({formatCredits(credits?.balance || 0)} left)
+              </Text>
+            </View>
+            <Pressable
+              className="bg-amber-500 px-3 py-1.5 rounded-lg active:bg-amber-600"
+              onPress={() => router.push("/credits")}
+            >
+              <Text className="text-white text-xs font-semibold">Add More</Text>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </ResponsiveContainer>
       )}
 
       <ScrollView
@@ -126,7 +199,7 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: 32 }}
       >
         {/* Hero Section */}
-        <View className="px-4 pt-8 pb-6">
+        <ResponsiveContainer className={`pt-8 pb-6 ${showDesktopLayout ? "items-center" : ""}`}>
           {/* Badge */}
           <View className="flex-row items-center self-start bg-primary-50 rounded-full px-3 py-1.5 mb-4">
             <Sparkles size={14} color="#3b82f6" />
@@ -147,127 +220,113 @@ export default function HomeScreen() {
           </Text>
 
           {/* CTAs */}
-          <Pressable
-            className="bg-primary-500 rounded-lg py-4 px-6 flex-row items-center justify-center mb-3 active:bg-primary-600"
-            onPress={() => router.push("/(tabs)/upload")}
-          >
-            <Text className="text-white font-semibold text-base">
-              Start Free Translation
-            </Text>
-            <Text className="text-white ml-2">→</Text>
-          </Pressable>
+          <View className={showDesktopLayout ? "flex-row gap-3 justify-center" : ""}>
+            <Pressable
+              className={`bg-primary-500 rounded-lg py-4 px-6 flex-row items-center justify-center active:bg-primary-600 ${showDesktopLayout ? "" : "mb-3"}`}
+              onPress={() => router.push("/(tabs)/upload")}
+            >
+              <Text className="text-white font-semibold text-base">
+                Start Free Translation
+              </Text>
+              <Text className="text-white ml-2">→</Text>
+            </Pressable>
 
-          <Pressable
-            className="bg-white border border-neutral-200 rounded-lg py-4 px-6 flex-row items-center justify-center active:bg-neutral-50"
-          >
-            <Play size={18} color="#334155" fill="#334155" />
-            <Text className="text-neutral-700 font-medium text-base ml-2">
-              Watch Demo
-            </Text>
-          </Pressable>
+            <Pressable
+              className="bg-white border border-neutral-200 rounded-lg py-4 px-6 flex-row items-center justify-center active:bg-neutral-50"
+            >
+              <Play size={18} color="#334155" fill="#334155" />
+              <Text className="text-neutral-700 font-medium text-base ml-2">
+                Watch Demo
+              </Text>
+            </Pressable>
+          </View>
 
           {/* Helper text */}
           <Text className="text-neutral-500 text-sm text-center mt-4">
-            No credit card required • 1 free video translation
+            No credit card required &bull; 1 free video translation
           </Text>
-        </View>
+        </ResponsiveContainer>
 
         {/* Why Mirai Dub AI Section */}
-        <View className="px-4 py-8 bg-neutral-50">
-          <Text className="text-2xl font-bold text-neutral-900 text-center mb-2">
-            Why Mirai Dub AI?
-          </Text>
-          <Text className="text-neutral-500 text-center mb-6">
-            Professional video translation made simple
-          </Text>
+        <View className="py-8 bg-neutral-50">
+          <ResponsiveContainer>
+            <Text className="text-2xl font-bold text-neutral-900 text-center mb-2">
+              Why Mirai Dub AI?
+            </Text>
+            <Text className="text-neutral-500 text-center mb-6">
+              Professional video translation made simple
+            </Text>
 
-          <View className="flex-row flex-wrap gap-3">
-            {features.map((feature, index) => (
-              <View
-                key={index}
-                className="bg-white rounded-lg p-4 shadow-raised"
-                style={{ width: "48%" }}
-              >
-                <View className="w-10 h-10 bg-primary-50 rounded-lg items-center justify-center mb-3">
-                  <feature.icon size={20} color="#3b82f6" />
+            <View className={`flex-row flex-wrap gap-3 ${showDesktopLayout ? "justify-between" : "justify-center"}`}>
+              {features.map((feature, index) => (
+                <View
+                  key={index}
+                  className="bg-white rounded-lg p-4 shadow-raised"
+                  style={{
+                    width: showDesktopLayout ? "23%" : "48%",
+                    minWidth: showDesktopLayout ? 200 : undefined
+                  }}
+                >
+                  <View className="w-10 h-10 bg-primary-50 rounded-lg items-center justify-center mb-3">
+                    <feature.icon size={20} color="#3b82f6" />
+                  </View>
+                  <Text className="text-neutral-900 font-semibold text-base mb-1">
+                    {feature.title}
+                  </Text>
+                  <Text className="text-neutral-500 text-sm leading-5">
+                    {feature.description}
+                  </Text>
                 </View>
-                <Text className="text-neutral-900 font-semibold text-base mb-1">
-                  {feature.title}
-                </Text>
-                <Text className="text-neutral-500 text-sm leading-5">
-                  {feature.description}
-                </Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          </ResponsiveContainer>
         </View>
 
         {/* How It Works Section */}
-        <View className="px-4 py-8">
-          <Text className="text-2xl font-bold text-neutral-900 text-center mb-2">
-            How It Works
-          </Text>
-          <Text className="text-neutral-500 text-center mb-6">
-            Four simple steps to global reach
-          </Text>
+        <View className="py-8">
+          <ResponsiveContainer>
+            <Text className="text-2xl font-bold text-neutral-900 text-center mb-2">
+              How It Works
+            </Text>
+            <Text className="text-neutral-500 text-center mb-6">
+              Four simple steps to global reach
+            </Text>
+          </ResponsiveContainer>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 16 }}
-          >
-            {steps.map((step, index) => (
-              <View
-                key={index}
-                className="bg-white border border-neutral-200 rounded-lg p-4 mr-3"
-                style={{ width: 200 }}
-              >
-                <View className="w-8 h-8 bg-primary-500 rounded-full items-center justify-center mb-3">
-                  <Text className="text-white font-bold text-sm">{step.number}</Text>
-                </View>
-                <View className="w-10 h-10 bg-neutral-100 rounded-lg items-center justify-center mb-3">
-                  <step.icon size={20} color="#334155" />
-                </View>
-                <Text className="text-neutral-900 font-semibold text-base mb-1">
-                  {step.title}
-                </Text>
-                <Text className="text-neutral-500 text-sm leading-5">
-                  {step.description}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
+          {/* Conditional rendering: Desktop row vs Mobile scroll */}
+          {showDesktopLayout ? (
+            <ResponsiveContainer>
+              <HowItWorksDesktop />
+            </ResponsiveContainer>
+          ) : (
+            <View className="px-4">
+              <HowItWorksMobile />
+            </View>
+          )}
         </View>
 
         {/* CTA Section */}
-        <View className="mx-4 bg-primary-500 rounded-xl p-6 items-center">
-          <Text className="text-white text-2xl font-bold text-center mb-2">
-            Ready to go global?
-          </Text>
-          <Text className="text-primary-100 text-center mb-6">
-            Join thousands of creators reaching audiences worldwide with Mirai Dub AI
-          </Text>
-          <Pressable
-            className="bg-white rounded-lg py-3 px-6 active:bg-neutral-100"
-            onPress={() => router.push("/(tabs)/upload")}
-          >
-            <Text className="text-primary-600 font-semibold text-base">
-              Get Started Free
+        <ResponsiveContainer>
+          <View className="bg-primary-500 rounded-xl p-6 items-center">
+            <Text className="text-white text-2xl font-bold text-center mb-2">
+              Ready to go global?
             </Text>
-          </Pressable>
-        </View>
+            <Text className="text-primary-100 text-center mb-6">
+              Join thousands of creators reaching audiences worldwide with Mirai Dub AI
+            </Text>
+            <Pressable
+              className="bg-white rounded-lg py-3 px-6 active:bg-neutral-100"
+              onPress={() => router.push("/(tabs)/upload")}
+            >
+              <Text className="text-primary-600 font-semibold text-base">
+                Get Started Free
+              </Text>
+            </Pressable>
+          </View>
+        </ResponsiveContainer>
 
         {/* Footer */}
-        <View className="px-4 pt-8 items-center">
-          <Text className="text-neutral-400 text-sm text-center mb-3">
-            © 2024 Mirai Dub AI. Create once, reach the world.
-          </Text>
-          <View className="flex-row gap-4">
-            <Text className="text-neutral-500 text-sm">Privacy</Text>
-            <Text className="text-neutral-500 text-sm">Terms</Text>
-            <Text className="text-neutral-500 text-sm">Support</Text>
-          </View>
-        </View>
+        <Footer />
       </ScrollView>
 
       {/* TODO: REMOVE BEFORE PRODUCTION - Dev Reset Button */}

@@ -4,10 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff, Mail, Lock, User, Chrome, Apple, Check, ChevronLeft } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
+import { useResponsive } from "@/hooks";
+import { ResponsiveContainer } from "@/components/layout";
 import { getErrorMessage } from "@/types/api";
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { showDesktopLayout } = useResponsive();
   const {
     signUpEmail,
     signInGoogle,
@@ -125,27 +128,30 @@ export default function SignupScreen() {
   const passwordStrength = getPasswordStrength();
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={showDesktopLayout ? [] : ["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         {/* Back Button */}
-        <Pressable
-          className="px-4 py-2 flex-row items-center"
-          onPress={() => router.back()}
-          disabled={isLoading}
-        >
-          <ChevronLeft size={24} color="#334155" />
-          <Text className="text-neutral-700 font-medium ml-1">Back</Text>
-        </Pressable>
+        <ResponsiveContainer maxWidth="sm" padding={false} className={showDesktopLayout ? "" : "px-4"}>
+          <Pressable
+            className="py-2 flex-row items-center"
+            onPress={() => router.back()}
+            disabled={isLoading}
+          >
+            <ChevronLeft size={24} color="#334155" />
+            <Text className="text-neutral-700 font-medium ml-1">Back</Text>
+          </Pressable>
+        </ResponsiveContainer>
 
         <ScrollView
-          className="flex-1 px-6"
+          className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
         >
+          <ResponsiveContainer maxWidth="sm" className={showDesktopLayout ? "py-4" : "px-6"}>
           {/* Header */}
           <View className="mb-6">
             <Text className="text-3xl font-bold text-neutral-900 mb-2">
@@ -372,6 +378,7 @@ export default function SignupScreen() {
               <Text className="text-primary-500 font-semibold">Sign in</Text>
             </Pressable>
           </View>
+          </ResponsiveContainer>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

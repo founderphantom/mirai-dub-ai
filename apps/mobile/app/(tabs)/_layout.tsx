@@ -1,6 +1,8 @@
 import { Tabs } from "expo-router";
 import { Home, Upload, Library } from "lucide-react-native";
 import { View, Text } from "react-native";
+import { useResponsive } from "@/hooks/useResponsive";
+import { DesktopNavBar } from "@/components/layout/DesktopNavBar";
 
 type TabIconProps = {
   focused: boolean;
@@ -28,21 +30,30 @@ function TabIcon({ focused, icon: Icon, label }: { focused: boolean; icon: React
 }
 
 export default function TabLayout() {
+  const { showDesktopLayout } = useResponsive();
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          height: 80,
-          paddingBottom: 10,
-          paddingTop: 8,
-          backgroundColor: "#ffffff",
-          borderTopWidth: 1,
-          borderTopColor: "#e2e8f0",
-        },
-      }}
-    >
+    <View className="flex-1">
+      {/* Desktop: Show top nav bar */}
+      {showDesktopLayout && <DesktopNavBar />}
+
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: false,
+          // Hide tab bar on desktop
+          tabBarStyle: showDesktopLayout
+            ? { display: "none" }
+            : {
+                height: 80,
+                paddingBottom: 10,
+                paddingTop: 8,
+                backgroundColor: "#ffffff",
+                borderTopWidth: 1,
+                borderTopColor: "#e2e8f0",
+              },
+        }}
+      >
       <Tabs.Screen
         name="home"
         options={{
@@ -68,5 +79,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }

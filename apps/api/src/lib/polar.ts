@@ -8,14 +8,14 @@ export const CREDIT_PACKAGES = [
   {
     id: "starter",
     name: "Starter",
-    minutes: 30,
+    seconds: 160,
     priceUsd: 9,
     polarProductId: "ac2d8076-bf76-40c1-83a9-70aaf761b8ce",
   },
   {
     id: "creator",
     name: "Creator",
-    minutes: 120,
+    seconds: 520,
     priceUsd: 29,
     polarProductId: "1e2b6e63-ef32-493e-8b27-15207c206c8b",
     popular: true,
@@ -23,14 +23,14 @@ export const CREDIT_PACKAGES = [
   {
     id: "pro",
     name: "Pro",
-    minutes: 300,
+    seconds: 1100,
     priceUsd: 59,
     polarProductId: "faa130cc-1d0b-4338-8cdd-d1fa5bdfa6ae",
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    minutes: 1000,
+    seconds: 3000,
     priceUsd: 149,
     polarProductId: "ce81bdf6-9553-440d-97b3-e6e96fc51b07",
   },

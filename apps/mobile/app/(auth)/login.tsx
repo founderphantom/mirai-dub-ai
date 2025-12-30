@@ -4,10 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff, Mail, Lock, Chrome, Apple } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
+import { useResponsive } from "@/hooks";
+import { ResponsiveContainer } from "@/components/layout";
 import { getErrorMessage } from "@/types/api";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { showDesktopLayout } = useResponsive();
   const {
     signInEmail,
     signInGoogle,
@@ -87,17 +90,18 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={showDesktopLayout ? [] : ["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <ScrollView
-          className="flex-1 px-6"
+          className="flex-1"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
           keyboardShouldPersistTaps="handled"
         >
+          <ResponsiveContainer maxWidth="sm" className={showDesktopLayout ? "py-8" : "px-6"}>
           {/* Header */}
           <View className="mb-8">
             <Text className="text-3xl font-bold text-neutral-900 mb-2">
@@ -242,6 +246,7 @@ export default function LoginScreen() {
               <Text className="text-primary-500 font-semibold">Sign up</Text>
             </Pressable>
           </View>
+          </ResponsiveContainer>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

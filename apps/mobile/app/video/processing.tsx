@@ -16,7 +16,8 @@ import {
   Sparkles,
   AlertCircle,
 } from "lucide-react-native";
-import { useVideoJob, useVideo } from "@/hooks";
+import { useVideoJob, useVideo, useResponsive } from "@/hooks";
+import { ResponsiveContainer, Footer } from "@/components/layout";
 import type { JobStep } from "@/types/video";
 
 type StepStatus = "pending" | "in-progress" | "completed" | "failed";
@@ -123,6 +124,7 @@ function StepIndicator({ status }: { status: StepStatus }) {
 export default function ProcessingScreen() {
   const router = useRouter();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
+  const { showDesktopLayout } = useResponsive();
 
   // Fetch video details
   const { data: video, isLoading: isLoadingVideo } = useVideo(videoId || "");
@@ -177,7 +179,7 @@ export default function ProcessingScreen() {
   // Loading state
   if (isLoadingVideo && !video) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <SafeAreaView className="flex-1 bg-white" edges={showDesktopLayout ? [] : ["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3b82f6" />
           <Text className="text-neutral-500 mt-3">Loading...</Text>
@@ -192,99 +194,100 @@ export default function ProcessingScreen() {
     : "";
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-white" edges={showDesktopLayout ? [] : ["top"]}>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 32 }}
       >
-        {/* Header */}
-        <View className="px-4 pt-2 pb-4 border-b border-neutral-200">
-          <Pressable
-            className="flex-row items-center mb-4"
-            onPress={() => router.push("/(tabs)/library")}
-          >
-            <ChevronLeft size={20} color="#64748b" />
-            <Text className="text-neutral-500 ml-1">Back to Library</Text>
-          </Pressable>
-
-          <Text className="text-2xl font-bold text-neutral-900 mb-1">
-            {isCompleted
-              ? "Translation Complete!"
-              : isFailed
-              ? "Translation Failed"
-              : "Translation in Progress"}
-          </Text>
-          <Text className="text-neutral-500">
-            {isCompleted
-              ? "Your video is ready to download."
-              : isFailed
-              ? "There was an error processing your video."
-              : "Your video is being processed. This usually takes 2-5 minutes per minute of video."}
-          </Text>
-        </View>
-
-        {/* Video Info */}
-        <View className="px-4 py-4 border-b border-neutral-200">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center flex-1">
-              <Text className="text-neutral-700 font-medium">Processing</Text>
-              <Text
-                className="text-neutral-900 font-semibold ml-1 flex-1"
-                numberOfLines={1}
-              >
-                {videoTitle}
-              </Text>
-            </View>
-            {videoDuration && (
-              <View className="bg-neutral-100 rounded-full px-2 py-1">
-                <Text className="text-neutral-600 text-sm">{videoDuration}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Overall Progress */}
-        <View className="px-4 py-6 border-b border-neutral-200">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-neutral-700 font-semibold">Overall Progress</Text>
-            <Text
-              className={`font-bold text-lg ${
-                isCompleted
-                  ? "text-success-500"
-                  : isFailed
-                  ? "text-error-500"
-                  : "text-primary-500"
-              }`}
+        <ResponsiveContainer maxWidth="md" className="py-4">
+          {/* Header */}
+          <View className="pt-2 pb-4 border-b border-neutral-200">
+            <Pressable
+              className="flex-row items-center mb-4"
+              onPress={() => router.push("/(tabs)/library")}
             >
-              {isCompleted ? "100%" : isFailed ? "Failed" : `${overallProgress}%`}
+              <ChevronLeft size={20} color="#64748b" />
+              <Text className="text-neutral-500 ml-1">Back to Library</Text>
+            </Pressable>
+
+            <Text className="text-2xl font-bold text-neutral-900 mb-1">
+              {isCompleted
+                ? "Translation Complete!"
+                : isFailed
+                ? "Translation Failed"
+                : "Translation in Progress"}
+            </Text>
+            <Text className="text-neutral-500">
+              {isCompleted
+                ? "Your video is ready to download."
+                : isFailed
+                ? "There was an error processing your video."
+                : "Your video is being processed. This usually takes 2-5 minutes per minute of video."}
             </Text>
           </View>
-          <View className="h-3 bg-neutral-200 rounded-full overflow-hidden">
-            <View
-              className={`h-3 rounded-full ${
-                isCompleted
-                  ? "bg-success-500"
-                  : isFailed
-                  ? "bg-error-500"
-                  : "bg-primary-500"
-              }`}
-              style={{ width: `${isCompleted ? 100 : overallProgress}%` }}
-            />
-          </View>
-        </View>
 
-        {/* Error Message */}
-        {isFailed && job?.error && (
-          <View className="mx-4 mt-4 bg-error-50 border border-error-200 rounded-xl p-4">
-            <Text className="text-error-700 font-medium mb-1">Error Details</Text>
-            <Text className="text-error-600 text-sm">{job.error}</Text>
+          {/* Video Info */}
+          <View className="py-4 border-b border-neutral-200">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <Text className="text-neutral-700 font-medium">Processing</Text>
+                <Text
+                  className="text-neutral-900 font-semibold ml-1 flex-1"
+                  numberOfLines={1}
+                >
+                  {videoTitle}
+                </Text>
+              </View>
+              {videoDuration && (
+                <View className="bg-neutral-100 rounded-full px-2 py-1">
+                  <Text className="text-neutral-600 text-sm">{videoDuration}</Text>
+                </View>
+              )}
+            </View>
           </View>
-        )}
 
-        {/* Processing Steps */}
-        <View className="px-4 py-4">
-          {steps.map((step, index) => {
+          {/* Overall Progress */}
+          <View className="py-6 border-b border-neutral-200">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-neutral-700 font-semibold">Overall Progress</Text>
+              <Text
+                className={`font-bold text-lg ${
+                  isCompleted
+                    ? "text-success-500"
+                    : isFailed
+                    ? "text-error-500"
+                    : "text-primary-500"
+                }`}
+              >
+                {isCompleted ? "100%" : isFailed ? "Failed" : `${overallProgress}%`}
+              </Text>
+            </View>
+            <View className="h-3 bg-neutral-200 rounded-full overflow-hidden">
+              <View
+                className={`h-3 rounded-full ${
+                  isCompleted
+                    ? "bg-success-500"
+                    : isFailed
+                    ? "bg-error-500"
+                    : "bg-primary-500"
+                }`}
+                style={{ width: `${isCompleted ? 100 : overallProgress}%` }}
+              />
+            </View>
+          </View>
+
+          {/* Error Message */}
+          {isFailed && job?.error && (
+            <View className="mt-4 bg-error-50 border border-error-200 rounded-xl p-4">
+              <Text className="text-error-700 font-medium mb-1">Error Details</Text>
+              <Text className="text-error-600 text-sm">{job.error}</Text>
+            </View>
+          )}
+
+          {/* Processing Steps */}
+          <View className="py-4">
+            {steps.map((step, index) => {
             const Icon = step.icon;
             const isLast = index === steps.length - 1;
 
@@ -364,88 +367,91 @@ export default function ProcessingScreen() {
                 </View>
               </View>
             );
-          })}
-        </View>
+            })}
+          </View>
 
-        {/* Info Cards */}
-        {!isCompleted && !isFailed && (
-          <View className="px-4 flex-row gap-3">
-            {/* Notification Card */}
-            <View className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-              <View className="w-10 h-10 bg-primary-100 rounded-xl items-center justify-center mb-3">
-                <Bell size={20} color="#3b82f6" />
-              </View>
-              <Text className="text-neutral-900 font-semibold mb-1">
-                Get Notified
-              </Text>
-              <Text className="text-neutral-500 text-sm mb-3">
-                We'll send you a notification when your video is ready. Feel free to
-                close this page.
-              </Text>
-              <Pressable className="bg-primary-500 rounded-lg py-2.5 items-center active:bg-primary-600">
-                <Text className="text-white font-medium text-sm">
-                  Enable Notifications
+          {/* Info Cards */}
+          {!isCompleted && !isFailed && (
+            <View className="flex-row gap-3">
+              {/* Notification Card */}
+              <View className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+                <View className="w-10 h-10 bg-primary-100 rounded-xl items-center justify-center mb-3">
+                  <Bell size={20} color="#3b82f6" />
+                </View>
+                <Text className="text-neutral-900 font-semibold mb-1">
+                  Get Notified
                 </Text>
+                <Text className="text-neutral-500 text-sm mb-3">
+                  We'll send you a notification when your video is ready. Feel free to
+                  close this page.
+                </Text>
+                <Pressable className="bg-primary-500 rounded-lg py-2.5 items-center active:bg-primary-600">
+                  <Text className="text-white font-medium text-sm">
+                    Enable Notifications
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* What's Happening Card */}
+              <View className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+                <View className="w-10 h-10 bg-primary-100 rounded-xl items-center justify-center mb-3">
+                  <Sparkles size={20} color="#3b82f6" />
+                </View>
+                <Text className="text-neutral-900 font-semibold mb-1">
+                  What's Happening?
+                </Text>
+                <Text className="text-neutral-500 text-sm">
+                  Our AI is analyzing your video, translating the speech, generating
+                  natural voice, and syncing lips for a seamless result.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Completed State Actions */}
+          {isCompleted && (
+            <View className="pt-4">
+              <Pressable
+                className="bg-primary-500 rounded-lg py-4 items-center active:bg-primary-600 mb-3"
+                onPress={() => router.replace(`/video/${videoId}`)}
+              >
+                <Text className="text-white font-semibold">View Video</Text>
               </Pressable>
             </View>
+          )}
 
-            {/* What's Happening Card */}
-            <View className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl p-4">
-              <View className="w-10 h-10 bg-primary-100 rounded-xl items-center justify-center mb-3">
-                <Sparkles size={20} color="#3b82f6" />
-              </View>
-              <Text className="text-neutral-900 font-semibold mb-1">
-                What's Happening?
-              </Text>
-              <Text className="text-neutral-500 text-sm">
-                Our AI is analyzing your video, translating the speech, generating
-                natural voice, and syncing lips for a seamless result.
-              </Text>
+          {/* Failed State Actions */}
+          {isFailed && (
+            <View className="pt-4">
+              <Pressable
+                className="bg-primary-500 rounded-lg py-4 items-center active:bg-primary-600 mb-3"
+                onPress={() => router.push("/(tabs)/upload")}
+              >
+                <Text className="text-white font-semibold">Try Again</Text>
+              </Pressable>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Completed State Actions */}
-        {isCompleted && (
-          <View className="px-4 pt-4">
+          {/* Bottom Actions */}
+          <View className="pt-6 flex-row gap-3">
             <Pressable
-              className="bg-primary-500 rounded-lg py-4 items-center active:bg-primary-600 mb-3"
-              onPress={() => router.replace(`/video/${videoId}`)}
-            >
-              <Text className="text-white font-semibold">View Video</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {/* Failed State Actions */}
-        {isFailed && (
-          <View className="px-4 pt-4">
-            <Pressable
-              className="bg-primary-500 rounded-lg py-4 items-center active:bg-primary-600 mb-3"
+              className="flex-1 bg-neutral-100 rounded-lg py-3.5 items-center active:bg-neutral-200"
               onPress={() => router.push("/(tabs)/upload")}
             >
-              <Text className="text-white font-semibold">Try Again</Text>
+              <Text className="text-neutral-700 font-medium">
+                Upload Another Video
+              </Text>
+            </Pressable>
+            <Pressable
+              className="flex-1 bg-white border border-neutral-200 rounded-lg py-3.5 items-center active:bg-neutral-50"
+              onPress={() => router.push("/(tabs)/library")}
+            >
+              <Text className="text-neutral-700 font-medium">View Library</Text>
             </Pressable>
           </View>
-        )}
+        </ResponsiveContainer>
 
-        {/* Bottom Actions */}
-        <View className="px-4 pt-6 flex-row gap-3">
-          <Pressable
-            className="flex-1 bg-neutral-100 rounded-lg py-3.5 items-center active:bg-neutral-200"
-            onPress={() => router.push("/(tabs)/upload")}
-          >
-            <Text className="text-neutral-700 font-medium">
-              Upload Another Video
-            </Text>
-          </Pressable>
-          <Pressable
-            className="flex-1 bg-white border border-neutral-200 rounded-lg py-3.5 items-center active:bg-neutral-50"
-            onPress={() => router.push("/(tabs)/library")}
-          >
-            <Text className="text-neutral-700 font-medium">View Library</Text>
-          </Pressable>
-        </View>
+        {showDesktopLayout && <Footer />}
       </ScrollView>
     </SafeAreaView>
   );

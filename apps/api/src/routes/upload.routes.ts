@@ -71,19 +71,19 @@ uploadRoutes.post(
         return c.json(formatErrorResponse(error), error.statusCode);
       }
 
-      // Estimate credits needed (1 credit = 1 minute)
-      const estimatedMinutes = data.durationSeconds
-        ? Math.ceil(data.durationSeconds / 60)
-        : Math.ceil(data.fileSize / (10 * 1024 * 1024)); // ~10MB per minute estimate
+      // Estimate credits needed (1 credit = 1 second of video)
+      const estimatedSeconds = data.durationSeconds
+        ? data.durationSeconds
+        : Math.ceil(data.fileSize / (10 * 1024 * 1024)) * 60; // ~10MB per minute estimate, converted to seconds
 
       // Check if user can process this video
       const hasTrial = dbUser.trialVideosUsed < 1 && dbUser.isAnonymous;
       const hasBonus = dbUser.bonusVideosAvailable > 0;
-      const hasCredits = dbUser.creditsBalance >= estimatedMinutes;
+      const hasCredits = dbUser.creditsBalance >= estimatedSeconds;
 
       if (!hasTrial && !hasBonus && !hasCredits) {
         const error = createError(ErrorCodes.INSUFFICIENT_CREDITS, {
-          required: estimatedMinutes,
+          required: estimatedSeconds,
           available: dbUser.creditsBalance,
           hasTrial,
           hasBonus,
@@ -91,17 +91,17 @@ uploadRoutes.post(
         return c.json(formatErrorResponse(error), error.statusCode);
       }
 
-      // Enforce 1-minute limit for free videos (using trial or bonus)
+      // Enforce 60-second limit for free videos (using trial or bonus)
       // Only skip this check if the user is paying with credits (hasCredits is true AND they have enough credits)
       // Note: We prioritize using free resources, but they come with limits.
       // If user has credits but also free resources, we might want to let them use credits for longer videos?
-      // Logic: If the video is > 1 min, they MUST use credits.
-      if (estimatedMinutes > 1) {
+      // Logic: If the video is > 60 seconds, they MUST use credits.
+      if (estimatedSeconds > 60) {
         if (!hasCredits) {
           const error = createError(
             ErrorCodes.INVALID_REQUEST,
             undefined,
-            "Free videos are limited to 1 minute. Please upgrade to process longer videos."
+            "Free videos are limited to 60 seconds. Please upgrade to process longer videos."
           );
           return c.json(formatErrorResponse(error), error.statusCode);
         }

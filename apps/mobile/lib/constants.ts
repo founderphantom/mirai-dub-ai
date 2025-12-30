@@ -402,12 +402,12 @@ export const FILE_CONSTRAINTS = {
   maxDurationMinutes: 60,
 } as const;
 
-// Credit Plans
+// Credit Plans (in seconds for short-form content creators)
 export const CREDIT_PLANS = [
-  { id: "starter", name: "Starter", minutes: 30, price: 9, popular: false },
-  { id: "creator", name: "Creator", minutes: 120, price: 29, popular: true },
-  { id: "pro", name: "Pro", minutes: 300, price: 59, popular: false },
-  { id: "enterprise", name: "Enterprise", minutes: 1000, price: 149, popular: false },
+  { id: "starter", name: "Starter", seconds: 160, price: 9, popular: false },
+  { id: "creator", name: "Creator", seconds: 520, price: 29, popular: true },
+  { id: "pro", name: "Pro", seconds: 1100, price: 59, popular: false },
+  { id: "enterprise", name: "Enterprise", seconds: 3000, price: 149, popular: false },
 ] as const;
 
 // API Configuration

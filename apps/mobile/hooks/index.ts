@@ -36,3 +36,12 @@ export {
   useVideoJob,
   useProcessingProgress,
 } from "./useProcessing";
+
+// Responsive hooks
+export {
+  useResponsive,
+  useResponsiveValue,
+  BREAKPOINTS,
+  type Breakpoint,
+  type ResponsiveInfo,
+} from "./useResponsive";

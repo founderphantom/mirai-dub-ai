@@ -79,7 +79,7 @@ creditRoutes.get("/packages", async (c) => {
   const packages = CREDIT_PACKAGES.map((pkg) => ({
     id: pkg.id,
     name: pkg.name,
-    minutes: pkg.minutes,
+    seconds: pkg.seconds,
     price: pkg.priceUsd,
     popular: "popular" in pkg ? pkg.popular : false,
   }));

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text, Pressable, TextInput, Image, RefreshControl, ActivityIndicator, FlatList } from "react-native";
+import { View, Text, Pressable, TextInput, Image, RefreshControl, ActivityIndicator, FlatList, ScrollView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -13,7 +13,8 @@ import {
   Loader,
   AlertCircle,
 } from "lucide-react-native";
-import { useVideos, useCredits, formatCredits } from "@/hooks";
+import { useVideos, useCredits, formatCredits, useResponsive } from "@/hooks";
+import { ResponsiveContainer, Footer } from "@/components/layout";
 import type { Video as VideoType, VideoStatus } from "@/types/video";
 import { SUPPORTED_LANGUAGES } from "@/lib/constants";
 
@@ -62,12 +63,15 @@ function getLanguageName(code: string): string {
 type VideoCardProps = {
   video: VideoType;
   onPress: () => void;
+  layout?: "list" | "grid";
 };
 
-function VideoCard({ video, onPress }: VideoCardProps) {
+function VideoCard({ video, onPress, layout = "list" }: VideoCardProps) {
+  const isGrid = layout === "grid";
+
   return (
     <Pressable
-      className="bg-white rounded-xl overflow-hidden shadow-raised mb-4"
+      className={`bg-white rounded-xl overflow-hidden shadow-raised ${isGrid ? "" : "mb-4"}`}
       onPress={onPress}
     >
       {/* Thumbnail */}
@@ -75,11 +79,11 @@ function VideoCard({ video, onPress }: VideoCardProps) {
         {video.thumbnailUrl ? (
           <Image
             source={{ uri: video.thumbnailUrl }}
-            className="w-full h-44 bg-neutral-200"
+            className={`w-full ${isGrid ? "h-36" : "h-44"} bg-neutral-200`}
             resizeMode="cover"
           />
         ) : (
-          <View className="w-full h-44 bg-slate-400 items-center justify-center">
+          <View className={`w-full ${isGrid ? "h-36" : "h-44"} bg-slate-400 items-center justify-center`}>
             <Play size={32} color="#fff" />
           </View>
         )}
@@ -178,6 +182,7 @@ export default function LibraryScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<VideoStatus | undefined>(undefined);
+  const { showDesktopLayout, isTablet, width } = useResponsive();
 
   // Fetch videos with infinite query
   const {
@@ -193,6 +198,10 @@ export default function LibraryScreen() {
 
   // Fetch credits
   const { data: credits } = useCredits();
+
+  // Calculate number of columns based on screen size
+  const numColumns = showDesktopLayout ? 3 : isTablet ? 2 : 1;
+  const useGridLayout = showDesktopLayout || isTablet;
 
   // Flatten pages into single array
   const allVideos = data?.pages.flatMap((page) => page.items) || [];
@@ -212,20 +221,26 @@ export default function LibraryScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const handleVideoPress = useCallback(
+    (item: VideoType) => {
+      if (item.status === "processing" || item.status === "queued") {
+        router.push(`/video/processing?videoId=${item.id}`);
+      } else {
+        router.push(`/video/${item.id}`);
+      }
+    },
+    [router]
+  );
+
   const renderVideo = useCallback(
     ({ item }: { item: VideoType }) => (
       <VideoCard
         video={item}
-        onPress={() => {
-          if (item.status === "processing" || item.status === "queued") {
-            router.push(`/video/processing?videoId=${item.id}`);
-          } else {
-            router.push(`/video/${item.id}`);
-          }
-        }}
+        onPress={() => handleVideoPress(item)}
+        layout={useGridLayout ? "grid" : "list"}
       />
     ),
-    [router]
+    [handleVideoPress, useGridLayout]
   );
 
   const renderFooter = () => {
@@ -257,86 +272,104 @@ export default function LibraryScreen() {
     </View>
   );
 
+  // Calculate grid item width for desktop layout
+  const gridItemWidth = `${Math.floor(100 / numColumns) - 2}%`;
+
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-neutral-50" edges={showDesktopLayout ? [] : ["top"]}>
       {/* Header */}
-      <View className="px-4 pt-4 pb-3 bg-white border-b border-neutral-200">
-        <View className="flex-row items-center justify-between mb-1">
-          <View className="flex-1 mr-3">
-            <Text className="text-2xl font-bold text-neutral-900">
-              Video Library
-            </Text>
-            <Text className="text-neutral-500" numberOfLines={1}>
-              Manage your translated videos
-            </Text>
+      <View className="bg-white border-b border-neutral-200">
+        <ResponsiveContainer className="pt-4 pb-3">
+          <View className="flex-row items-center justify-between mb-1">
+            <View className="flex-1 mr-3">
+              <Text className="text-2xl font-bold text-neutral-900">
+                Video Library
+              </Text>
+              <Text className="text-neutral-500" numberOfLines={1}>
+                Manage and download your translated videos
+              </Text>
+            </View>
+            <Pressable
+              className={`bg-primary-500 items-center justify-center active:bg-primary-600 ${
+                showDesktopLayout
+                  ? "px-4 py-2 rounded-lg flex-row"
+                  : "w-10 h-10 rounded-full"
+              }`}
+              onPress={() => router.push("/(tabs)/upload")}
+            >
+              <Plus size={20} color="#fff" />
+              {showDesktopLayout && (
+                <Text className="text-white font-medium ml-2">Upload New Video</Text>
+              )}
+            </Pressable>
           </View>
-          <Pressable
-            className="bg-primary-500 w-10 h-10 rounded-full items-center justify-center active:bg-primary-600"
-            onPress={() => router.push("/(tabs)/upload")}
-          >
-            <Plus size={20} color="#fff" />
-          </Pressable>
-        </View>
+        </ResponsiveContainer>
       </View>
 
-      {/* Credits Bar */}
-      <View className="px-4 py-3 bg-white border-b border-neutral-200 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <Clock size={16} color="#64748b" />
-          <Text className="text-neutral-600 ml-2">
-            {credits ? (
-              <>
-                <Text className="font-semibold">{formatCredits(credits.balance)}</Text>
-                {credits.trialVideosRemaining > 0 ? " + Free Video" : " remaining"}
-              </>
-            ) : (
-              "Loading..."
-            )}
-          </Text>
-        </View>
-        <Pressable
-          className="bg-primary-50 rounded-lg px-3 py-1.5 active:bg-primary-100"
-          onPress={() => router.push("/credits")}
-        >
-          <Text className="text-primary-600 font-medium text-sm">+ Add</Text>
-        </Pressable>
-      </View>
+      {/* Credits Bar + Search & Filter */}
+      <View className="bg-white border-b border-neutral-200">
+        <ResponsiveContainer className="py-3">
+          <View className="flex-row items-center justify-between">
+            {/* Search */}
+            <View className="flex-1 flex-row items-center bg-neutral-100 rounded-lg px-3 py-2.5 mr-3">
+              <Search size={18} color="#94a3b8" />
+              <TextInput
+                className="flex-1 ml-2 text-neutral-700"
+                placeholder="Search videos..."
+                placeholderTextColor="#94a3b8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
 
-      {/* Search & Filter */}
-      <View className="px-4 py-3 bg-white border-b border-neutral-200 flex-row items-center gap-3">
-        <View className="flex-1 flex-row items-center bg-neutral-100 rounded-lg px-3 py-2.5">
-          <Search size={18} color="#94a3b8" />
-          <TextInput
-            className="flex-1 ml-2 text-neutral-700"
-            placeholder="Search videos..."
-            placeholderTextColor="#94a3b8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-        <Pressable
-          className="bg-neutral-100 rounded-lg px-4 py-2.5 flex-row items-center"
-          onPress={() => {
-            // Cycle through filter options
-            if (!filterStatus) setFilterStatus("processing");
-            else if (filterStatus === "processing") setFilterStatus("completed");
-            else if (filterStatus === "completed") setFilterStatus("failed");
-            else setFilterStatus(undefined);
-          }}
-        >
-          <Filter size={18} color="#64748b" />
-          <Text className="text-neutral-600 ml-2">
-            {!filterStatus ? "All Videos" : filterStatus}
-          </Text>
-        </Pressable>
+            {/* Filter */}
+            <Pressable
+              className="bg-neutral-100 rounded-lg px-4 py-2.5 flex-row items-center mr-3"
+              onPress={() => {
+                if (!filterStatus) setFilterStatus("processing");
+                else if (filterStatus === "processing") setFilterStatus("completed");
+                else if (filterStatus === "completed") setFilterStatus("failed");
+                else setFilterStatus(undefined);
+              }}
+            >
+              <Filter size={18} color="#64748b" />
+              <Text className="text-neutral-600 ml-2">
+                {!filterStatus ? "All Videos" : filterStatus}
+              </Text>
+            </Pressable>
+
+            {/* Credits */}
+            <View className="flex-row items-center">
+              <Clock size={16} color="#64748b" />
+              <Text className="text-neutral-600 ml-2 mr-3">
+                {credits ? (
+                  <>
+                    <Text className="font-semibold">{formatCredits(credits.balance)}</Text>
+                    {credits.trialVideosRemaining > 0 ? " + Free Video" : " remaining"}
+                  </>
+                ) : (
+                  "Loading..."
+                )}
+              </Text>
+              <Pressable
+                className="bg-primary-50 rounded-lg px-3 py-1.5 active:bg-primary-100"
+                onPress={() => router.push("/credits")}
+              >
+                <Text className="text-primary-600 font-medium text-sm">+ Add</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ResponsiveContainer>
       </View>
 
       {/* Error State */}
       {isError && (
-        <View className="px-4 py-3 bg-error-50 border-b border-error-200">
-          <Text className="text-error-700 text-sm">
-            Failed to load videos. Pull to refresh.
-          </Text>
+        <View className="bg-error-50 border-b border-error-200">
+          <ResponsiveContainer className="py-3">
+            <Text className="text-error-700 text-sm">
+              Failed to load videos. Pull to refresh.
+            </Text>
+          </ResponsiveContainer>
         </View>
       )}
 
@@ -346,7 +379,41 @@ export default function LibraryScreen() {
           <ActivityIndicator size="large" color="#3b82f6" />
           <Text className="text-neutral-500 mt-3">Loading videos...</Text>
         </View>
+      ) : Platform.OS === "web" && useGridLayout ? (
+        // Desktop web: Use ScrollView with grid layout
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={handleRefresh}
+              colors={["#3b82f6"]}
+            />
+          }
+        >
+          <ResponsiveContainer className="py-4">
+            {filteredVideos.length === 0 ? (
+              renderEmpty()
+            ) : (
+              <View className="flex-row flex-wrap" style={{ gap: 16 }}>
+                {filteredVideos.map((video) => (
+                  <View key={video.id} style={{ width: gridItemWidth }}>
+                    <VideoCard
+                      video={video}
+                      onPress={() => handleVideoPress(video)}
+                      layout="grid"
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </ResponsiveContainer>
+          {isFetchingNextPage && renderFooter()}
+          <Footer />
+        </ScrollView>
       ) : (
+        // Mobile/Native: Use FlatList for virtualization
         <FlatList
           data={filteredVideos}
           renderItem={renderVideo}
