@@ -144,7 +144,7 @@ creditRoutes.post(
   zValidator("json", checkoutSchema),
   async (c) => {
     const user = c.get("user")!;
-    const { packageId, successUrl, cancelUrl } = c.req.valid("json");
+    const { packageId, successUrl, cancelUrl, platform } = c.req.valid("json");
     const db = createDb(c.env.DB);
 
     try {
@@ -176,8 +176,9 @@ creditRoutes.post(
 
       // Build success URL - Polar requires HTTP/HTTPS, so we always use our redirect endpoint
       // (ignore client-provided successUrl which may be a deep link like miraidub://)
+      // Include platform so redirect handler knows whether to use deep link (mobile) or web URL
       const apiBaseUrl = c.env.API_BASE_URL;
-      const checkoutSuccessUrl = `${apiBaseUrl}/checkout/success`;
+      const checkoutSuccessUrl = `${apiBaseUrl}/checkout/success?platform=${platform}`;
 
       // Create checkout session
       const { checkoutUrl, checkoutId } = await createCheckoutSession(polar, {

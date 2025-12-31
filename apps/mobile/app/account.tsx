@@ -263,6 +263,12 @@ export default function AccountScreen() {
         <ResponsiveContainer className="pt-6 pb-4">
           {showDesktopLayout && (
             <>
+              <Pressable
+                className="flex-row items-center mb-2"
+                onPress={() => router.push("/(tabs)/home")}
+              >
+                <Text className="text-primary-600 text-sm font-medium">← Home</Text>
+              </Pressable>
               <Text className="text-2xl font-bold text-neutral-900">
                 Account Settings
               </Text>

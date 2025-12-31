@@ -75,12 +75,14 @@ export const creditsApi = {
   async createCheckout(
     packageId: string,
     successUrl?: string,
-    cancelUrl?: string
+    cancelUrl?: string,
+    platform: "web" | "mobile" = "mobile"
   ): Promise<CheckoutResponse> {
     return apiClient.post<CheckoutResponse>("/api/credits/checkout", {
       packageId,
       successUrl,
       cancelUrl,
+      platform,
     });
   },
 };

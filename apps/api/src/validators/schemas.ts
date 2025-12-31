@@ -59,6 +59,7 @@ export const checkoutSchema = z.object({
   packageId: z.enum(["starter", "creator", "pro", "enterprise"]),
   successUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
+  platform: z.enum(["web", "mobile"]).optional().default("mobile"),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

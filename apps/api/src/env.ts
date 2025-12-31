@@ -29,6 +29,7 @@ export interface CloudflareBindings {
   // Environment variables
   ENVIRONMENT: "development" | "production";
   API_BASE_URL: string;
+  WEB_BASE_URL: string;
 
   // Secrets (set via wrangler secret put)
   BETTER_AUTH_SECRET: string;

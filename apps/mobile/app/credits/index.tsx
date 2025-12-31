@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -46,14 +46,26 @@ export default function CreditsScreen() {
     try {
       setPurchasingPackageId(packageId);
 
+      // Detect platform for proper redirect handling
+      const isWeb = Platform.OS === "web";
+      const currentPlatform = isWeb ? "web" : "mobile";
+
       // Create checkout session
       const { checkoutUrl } = await creditsApi.createCheckout(
         packageId,
         "miraidub://credits/success",
-        "miraidub://credits/cancel"
+        "miraidub://credits/cancel",
+        currentPlatform
       );
 
-      // Open in-app browser
+      if (isWeb) {
+        // On web: navigate current window directly to Polar checkout
+        // After payment, Polar will redirect back to the account page
+        window.location.href = checkoutUrl;
+        return;
+      }
+
+      // On mobile: open in-app browser
       const result = await WebBrowser.openBrowserAsync(checkoutUrl, {
         dismissButtonStyle: "cancel",
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
@@ -303,6 +315,12 @@ export default function CreditsScreen() {
         <ResponsiveContainer className="pt-6 pb-4">
           {showDesktopLayout && (
             <>
+              <Pressable
+                className="flex-row items-center mb-2"
+                onPress={() => router.push("/(tabs)/home")}
+              >
+                <Text className="text-primary-600 text-sm font-medium">← Home</Text>
+              </Pressable>
               <Text className="text-2xl font-bold text-neutral-900">
                 Buy Credits
               </Text>

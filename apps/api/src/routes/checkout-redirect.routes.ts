@@ -6,9 +6,19 @@ export const checkoutRedirectRoutes = new Hono<HonoEnv>();
 /**
  * GET /checkout/success
  * Redirect page after successful Polar checkout.
- * Returns an HTML page that redirects to the mobile app deep link.
+ * For web: redirects directly to the web app account page.
+ * For mobile: returns an HTML page that redirects to the mobile app deep link.
  */
 checkoutRedirectRoutes.get("/success", async (c) => {
+  const platform = c.req.query("platform") || "mobile";
+  const webBaseUrl = c.env.WEB_BASE_URL || "https://miraichat.app";
+
+  // For web: redirect directly to account page
+  if (platform === "web") {
+    return c.redirect(`${webBaseUrl}/account`);
+  }
+
+  // For mobile: return HTML page with deep link
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -88,9 +98,19 @@ checkoutRedirectRoutes.get("/success", async (c) => {
 /**
  * GET /checkout/cancel
  * Redirect page when checkout is cancelled.
- * Returns an HTML page that redirects to the mobile app deep link.
+ * For web: redirects directly to the web app credits page.
+ * For mobile: returns an HTML page that redirects to the mobile app deep link.
  */
 checkoutRedirectRoutes.get("/cancel", async (c) => {
+  const platform = c.req.query("platform") || "mobile";
+  const webBaseUrl = c.env.WEB_BASE_URL || "https://miraichat.app";
+
+  // For web: redirect directly to credits page
+  if (platform === "web") {
+    return c.redirect(`${webBaseUrl}/credits`);
+  }
+
+  // For mobile: return HTML page with deep link
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
