@@ -74,6 +74,7 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
           apple: {
             clientId: env.APPLE_CLIENT_ID,
             clientSecret: env.APPLE_CLIENT_SECRET,
+            appBundleIdentifier: env.APPLE_APP_BUNDLE_IDENTIFIER,
           },
         },
 
@@ -220,8 +221,13 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
           "exp://",
           "exp://**",
           "miraidub://",
+          "miraichat://",
           "miraidub://**",
+          "miraichat://**",
           "https://miraidub.ai",
+          "https://miraichat.app",
+          "https://www.miraichat.app",
+          "https://appleid.apple.com",
           "http://localhost:8081",
           "http://localhost:19000",
         ],

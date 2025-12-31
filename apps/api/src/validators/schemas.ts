@@ -23,7 +23,7 @@ export const uploadInitiateSchema = z.object({
     "video/x-m4v",    // Some browsers return this for .m4v
     "video/3gpp",     // 3GP format (common on mobile)
   ]),
-  sourceLanguage: languageCodeSchema.optional(), // Optional for auto-detect
+  sourceLanguage: languageCodeSchema.default("auto"), // Defaults to auto-detect
   targetLanguage: languageCodeSchema,
   title: z.string().min(1).max(255).optional(),
   durationSeconds: z.number().positive().max(3600).optional(), // 60 min max

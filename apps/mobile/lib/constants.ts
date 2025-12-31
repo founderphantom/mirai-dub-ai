@@ -412,7 +412,7 @@ export const CREDIT_PLANS = [
 
 // API Configuration
 export const API_CONFIG = {
-  baseUrl: process.env.EXPO_PUBLIC_API_URL || "https://api.miraidub.ai",
+  baseUrl: "https://api.miraichat.app",
   timeout: 30000,
   retryAttempts: 3,
 } as const;

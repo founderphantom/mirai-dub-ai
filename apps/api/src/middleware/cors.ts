@@ -22,6 +22,8 @@ export const corsMiddleware = cors({
 
     // Cloudflare Workers web app
     "https://mirai-dub-web.founder-968.workers.dev",
+    "https://miraichat.app",
+    "https://www.miraichat.app",
   ],
   credentials: true,
   allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

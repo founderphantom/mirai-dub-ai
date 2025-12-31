@@ -120,7 +120,7 @@ export default function VideoDetailScreen() {
 
     try {
       // Construct download URL directly
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://mirai-dub-api.founder-968.workers.dev';
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.miraichat.app';
       const downloadUrl = `${API_URL}/api/videos/${id}/download`;
 
       // Use React Native's Share API

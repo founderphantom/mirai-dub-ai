@@ -186,7 +186,7 @@ creditRoutes.post(
         metadata: {
           userId: user.id,
           packageId: creditPackage.id,
-          creditsAmount: creditPackage.minutes,
+          creditsAmount: creditPackage.seconds,
         },
         successUrl: checkoutSuccessUrl,
       });
@@ -196,7 +196,7 @@ creditRoutes.post(
           checkoutUrl,
           checkoutId,
           packageId: creditPackage.id,
-          creditsAmount: creditPackage.minutes,
+          creditsAmount: creditPackage.seconds,
         })
       );
     } catch (error) {

@@ -42,6 +42,7 @@ export interface CloudflareBindings {
   GOOGLE_CLIENT_SECRET: string;
   APPLE_CLIENT_ID: string;
   APPLE_CLIENT_SECRET: string;
+  APPLE_APP_BUNDLE_IDENTIFIER: string;
 }
 
 /**

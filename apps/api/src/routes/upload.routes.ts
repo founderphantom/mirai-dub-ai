@@ -92,11 +92,9 @@ uploadRoutes.post(
       }
 
       // Enforce 60-second limit for free videos (using trial or bonus)
-      // Only skip this check if the user is paying with credits (hasCredits is true AND they have enough credits)
-      // Note: We prioritize using free resources, but they come with limits.
-      // If user has credits but also free resources, we might want to let them use credits for longer videos?
-      // Logic: If the video is > 60 seconds, they MUST use credits.
-      if (estimatedSeconds > 60) {
+      // Only enforce if we have ACTUAL duration from client, not estimated duration.
+      // When duration is unknown (Expo Go, etc.), defer limit check to video processing step.
+      if (data.durationSeconds && data.durationSeconds > 60) {
         if (!hasCredits) {
           const error = createError(
             ErrorCodes.INVALID_REQUEST,
@@ -105,7 +103,6 @@ uploadRoutes.post(
           );
           return c.json(formatErrorResponse(error), error.statusCode);
         }
-        // If they have credits, we'll use credits naturally in the processing step (or deduction logic)
       }
 
       // Check file size limit
@@ -153,7 +150,7 @@ uploadRoutes.post(
           uploadId,
           uploadUrl: `${c.env.API_BASE_URL}/api/upload/${newVideo.id}/chunk`,
           storageKey,
-          estimatedCredits: estimatedMinutes,
+          estimatedCredits: estimatedSeconds,
         })
       );
     } catch (error) {

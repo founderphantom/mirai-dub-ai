@@ -94,7 +94,7 @@ export default function UploadScreen() {
         },
         {
           title,
-          sourceLanguage: sourceLanguage === "auto" ? undefined : sourceLanguage,
+          sourceLanguage,
           targetLanguage,
         },
         (progress) => {

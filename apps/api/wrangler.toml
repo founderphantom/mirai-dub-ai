@@ -4,8 +4,9 @@ compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-ENVIRONMENT = "development"
-API_BASE_URL = "https://mirai-dub-api.founder-968.workers.dev"
+ENVIRONMENT = "production"
+API_BASE_URL = "https://api.miraichat.app"
+APPLE_APP_BUNDLE_IDENTIFIER = "com.miraichat.app"
 
 # D1 Database
 [[d1_databases]]
@@ -36,10 +37,6 @@ max_batch_size = 1
 max_batch_timeout = 30
 max_retries = 3
 # dead_letter_queue = "video-processing-dlq"  # Optional: uncomment if you want failed messages captured
-
-# Production environment
-[env.production]
-vars = { ENVIRONMENT = "production", API_BASE_URL = "https://api.miraidub.ai" }
 
 [observability]
 [observability.logs]

@@ -10,14 +10,14 @@ export const CREDIT_PACKAGES = [
     name: "Starter",
     seconds: 160,
     priceUsd: 9,
-    polarProductId: "ac2d8076-bf76-40c1-83a9-70aaf761b8ce",
+    polarProductId: "e4f7d80d-6c8a-4994-a077-fcecfc4f20bd",
   },
   {
     id: "creator",
     name: "Creator",
     seconds: 520,
     priceUsd: 29,
-    polarProductId: "1e2b6e63-ef32-493e-8b27-15207c206c8b",
+    polarProductId: "debe3fe0-1442-4df6-a506-2c279585ba05",
     popular: true,
   },
   {
@@ -25,14 +25,14 @@ export const CREDIT_PACKAGES = [
     name: "Pro",
     seconds: 1100,
     priceUsd: 59,
-    polarProductId: "faa130cc-1d0b-4338-8cdd-d1fa5bdfa6ae",
+    polarProductId: "ccf85a20-eaf1-48a9-a3ca-e29433723958",
   },
   {
     id: "enterprise",
     name: "Enterprise",
     seconds: 3000,
     priceUsd: 149,
-    polarProductId: "ce81bdf6-9553-440d-97b3-e6e96fc51b07",
+    polarProductId: "08c271ef-59b5-4b81-a333-950accd488fc",
   },
 ] as const;
 
@@ -81,7 +81,7 @@ export async function createCheckoutSession(
   }
 ): Promise<{ checkoutUrl: string; checkoutId: string }> {
   const checkout = await polar.checkouts.create({
-    productId: params.productId,
+    products: [params.productId], // SDK 0.42.1 expects products array
     customerEmail: params.customerEmail,
     successUrl: params.successUrl,
     metadata: params.metadata as unknown as Record<string, string>,
