@@ -61,8 +61,6 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      console.log(`[API ${method}] ${endpoint}`);
-
       // Build headers
       const requestHeaders: Record<string, string> = {
         "Content-Type": "application/json",
@@ -74,7 +72,6 @@ class ApiClient {
       // On native, manually add cookies (credentials: "include" doesn't work in RN)
       if (Platform.OS !== "web") {
         const cookies = (await import("./auth")).authClient.getCookie();
-        console.log(`[API ${method}] Cookies:`, cookies || "none");
         if (cookies) {
           requestHeaders["Cookie"] = cookies;
         }

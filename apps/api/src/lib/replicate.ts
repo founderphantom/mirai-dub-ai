@@ -321,14 +321,54 @@ export interface ReplicatePredictionWebhook {
 }
 
 /**
- * Validate Replicate webhook signature
- * Note: Implement actual signature verification if Replicate provides one
+ * Validate Replicate webhook signature using HMAC-SHA256
+ * Based on Replicate's webhook verification documentation
  */
-export function validateReplicateWebhook(
-  _body: string,
-  _signature: string | null | undefined
-): boolean {
-  // TODO: Implement webhook signature validation when Replicate provides signing
-  // For now, we rely on the webhook URL being secret
-  return true;
+export async function validateReplicateWebhook(
+  webhookId: string,
+  webhookTimestamp: string,
+  webhookSignature: string,
+  body: string,
+  secret: string
+): Promise<boolean> {
+  if (!secret) {
+    console.warn("REPLICATE_WEBHOOK_SIGNING_SECRET not set - webhook validation disabled");
+    return true;
+  }
+
+  try {
+    // Extract the secret (remove 'whsec_' prefix if present)
+    const secretKey = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+
+    // Construct signed content: webhook-id.webhook-timestamp.body
+    const signedContent = `${webhookId}.${webhookTimestamp}.${body}`;
+
+    // Generate expected signature using HMAC-SHA256
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secretKey);
+    const messageData = encoder.encode(signedContent);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const expectedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+
+    // webhook-signature header may contain multiple signatures with version prefixes
+    // Format: "v1,signature1 v1,signature2"
+    const signatures = webhookSignature.split(' ').map(sig => {
+      const parts = sig.split(',');
+      return parts.length > 1 ? parts[1] : sig;
+    });
+
+    return signatures.includes(expectedSignature);
+  } catch (error) {
+    console.error("Webhook signature validation error:", error);
+    return false;
+  }
 }

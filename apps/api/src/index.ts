@@ -3,7 +3,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import type { HonoEnv, CloudflareBindings, VideoProcessingMessage } from "./env";
 import { authMiddleware } from "./middleware/auth";
-import { corsMiddleware } from "./middleware/cors";
+import { createCorsMiddleware } from "./middleware/cors";
 import { formatErrorResponse, successResponse } from "./lib/errors";
 
 // Route imports
@@ -24,7 +24,10 @@ const app = new Hono<HonoEnv>();
 // Global middleware
 app.use("*", logger());
 app.use("*", secureHeaders());
-app.use("*", corsMiddleware);
+app.use("*", async (c, next) => {
+  const corsHandler = createCorsMiddleware(c.env);
+  return corsHandler(c, next);
+});
 
 // Apply auth context to API routes (not webhooks)
 app.use("/api/auth/*", authMiddleware);

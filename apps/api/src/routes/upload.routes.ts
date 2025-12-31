@@ -39,9 +39,7 @@ uploadRoutes.post(
   async (c) => {
     const user = c.get("user")!;
 
-    // Log incoming request body for debugging
     const body = await c.req.json();
-    console.log("Upload initiate request body:", JSON.stringify(body, null, 2));
 
     // Validate
     const result = uploadInitiateSchema.safeParse(body);

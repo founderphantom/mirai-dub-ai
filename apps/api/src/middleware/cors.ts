@@ -1,16 +1,14 @@
 import { cors } from "hono/cors";
+import type { HonoEnv } from "@/env";
 
 /**
  * CORS configuration for the API
  * Allows requests from mobile app and development environments
  */
-export const corsMiddleware = cors({
-  origin: [
+export function createCorsMiddleware(env: HonoEnv["Bindings"]) {
+  const origins = [
     // Expo development
     "exp://",
-    "http://localhost:8081",
-    "http://localhost:19000",
-    "http://localhost:19006",
 
     // Production mobile app deep links
     "miraidub://",
@@ -24,18 +22,31 @@ export const corsMiddleware = cors({
     "https://mirai-dub-web.founder-968.workers.dev",
     "https://miraichat.app",
     "https://www.miraichat.app",
-  ],
-  credentials: true,
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-    "X-Part-Number",
-    "X-Total-Parts",
-  ],
-  exposeHeaders: ["Content-Length", "Content-Type"],
-  maxAge: 86400, // 24 hours
-});
+  ];
+
+  // Add localhost URLs only in development
+  if (env.ENVIRONMENT === "development") {
+    origins.push(
+      "http://localhost:8081",
+      "http://localhost:19000",
+      "http://localhost:19006"
+    );
+  }
+
+  return cors({
+    origin: origins,
+    credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+      "X-Part-Number",
+      "X-Total-Parts",
+    ],
+    exposeHeaders: ["Content-Length", "Content-Type"],
+    maxAge: 86400, // 24 hours
+  });
+}

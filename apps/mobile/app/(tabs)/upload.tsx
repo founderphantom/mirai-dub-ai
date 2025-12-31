@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
-import { ScrollView, View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
+import { useState, useCallback, useEffect } from "react";
+import { ScrollView, View, Text, Pressable, Alert, ActivityIndicator, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import {
   Upload,
   ArrowRight,
@@ -29,7 +30,9 @@ export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [sourceLanguage, setSourceLanguage] = useState("auto");
   const [targetLanguage, setTargetLanguage] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const { showDesktopLayout } = useResponsive();
+  const [dropZoneElement, setDropZoneElement] = useState<HTMLElement | null>(null);
 
   // Real API hooks
   const { data: credits, isLoading: isLoadingCredits } = useCredits();
@@ -39,18 +42,100 @@ export default function UploadScreen() {
     if (isUploading) return;
 
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"],
-        copyToCacheDirectory: true,
+      // Use ImagePicker for mobile to access photo gallery instead of Files app
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        quality: 1,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedFile(result.assets[0]);
+        const asset = result.assets[0];
+        // Map ImagePicker result to DocumentPicker-compatible format
+        setSelectedFile({
+          uri: asset.uri,
+          name: asset.fileName || `video_${Date.now()}.mp4`,
+          mimeType: asset.mimeType || 'video/mp4',
+          size: asset.fileSize || 0,
+        });
       }
     } catch (error) {
       Alert.alert("Error", "Failed to pick video file");
     }
   };
+
+  // Web-specific: Handle file from drag-and-drop or file input
+  const handleWebFile = useCallback((file: File) => {
+    const validTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"];
+    if (!validTypes.includes(file.type)) {
+      Alert.alert("Invalid File", "Please select a valid video file (MP4, MOV, AVI, or WebM)");
+      return;
+    }
+
+    // Create a DocumentPicker-compatible asset from the File object
+    const asset: DocumentPicker.DocumentPickerAsset = {
+      uri: URL.createObjectURL(file),
+      name: file.name,
+      mimeType: file.type,
+      size: file.size,
+      lastModified: file.lastModified,
+    };
+    setSelectedFile(asset);
+  }, []);
+
+  // Attach drag-and-drop event listeners on web
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !dropZoneElement) return;
+
+    const element = dropZoneElement;
+
+    const onDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isUploading) setIsDragging(true);
+    };
+
+    const onDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Only set isDragging to false if we're leaving the drop zone entirely
+      const rect = element.getBoundingClientRect();
+      const x = e.clientX;
+      const y = e.clientY;
+      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+        setIsDragging(false);
+      }
+    };
+
+    const onDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      if (isUploading) return;
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleWebFile(files[0]);
+      }
+    };
+
+    element.addEventListener('dragenter', onDragEnter);
+    element.addEventListener('dragleave', onDragLeave);
+    element.addEventListener('dragover', onDragOver);
+    element.addEventListener('drop', onDrop);
+
+    return () => {
+      element.removeEventListener('dragenter', onDragEnter);
+      element.removeEventListener('dragleave', onDragLeave);
+      element.removeEventListener('dragover', onDragOver);
+      element.removeEventListener('drop', onDrop);
+    };
+  }, [dropZoneElement, isUploading, handleWebFile]);
 
   const handleStartTranslation = useCallback(async () => {
     if (!selectedFile || !targetLanguage) {
@@ -122,10 +207,88 @@ export default function UploadScreen() {
 
   const isValid = selectedFile && targetLanguage && !isUploading;
 
-  // Upload Zone Component (reused in both layouts)
-  const UploadZone = () => (
+  // Upload Zone content
+  // On web, we wrap with a div to properly capture drag-drop events
+  const uploadZoneContent = Platform.OS === 'web' ? (
+    <div
+      ref={(node) => setDropZoneElement(node)}
+      style={{ width: '100%' }}
+    >
+      <Pressable
+        className={`border-2 border-dashed rounded-xl p-8 items-center justify-center ${
+          isDragging
+            ? "border-primary-500 bg-primary-100"
+            : selectedFile
+              ? "border-primary-500 bg-primary-50"
+              : "border-neutral-300 bg-neutral-50"
+          } ${isUploading ? "opacity-50" : ""}`}
+        onPress={handleFilePick}
+        disabled={isUploading}
+      >
+      {isUploading ? (
+        <>
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text className="text-primary-600 font-semibold text-center mt-3">
+            Uploading... {uploadProgress}%
+          </Text>
+          <View className="w-full h-2 bg-neutral-200 rounded-full mt-3 overflow-hidden">
+            <View
+              className="h-2 bg-primary-500 rounded-full"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </View>
+        </>
+      ) : selectedFile ? (
+        <>
+          <View className="w-12 h-12 bg-primary-100 rounded-full items-center justify-center mb-3">
+            <CheckCircle size={24} color="#3b82f6" />
+          </View>
+          <Text className="text-neutral-900 font-semibold text-center mb-1">
+            {selectedFile.name}
+          </Text>
+          <Text className="text-neutral-500 text-sm text-center">
+            {selectedFile.size ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB` : ""}
+          </Text>
+          <Text className="text-primary-500 text-sm text-center mt-2">
+            Tap to change file
+          </Text>
+        </>
+      ) : isDragging ? (
+        <>
+          <View className="w-12 h-12 bg-primary-200 rounded-full items-center justify-center mb-3">
+            <Upload size={24} color="#3b82f6" />
+          </View>
+          <Text className="text-primary-600 font-semibold text-center mb-1">
+            Drop your video here
+          </Text>
+          <Text className="text-primary-500 text-sm text-center">
+            Release to upload
+          </Text>
+        </>
+      ) : (
+        <>
+          <View className="w-12 h-12 bg-neutral-200 rounded-full items-center justify-center mb-3">
+            <Upload size={24} color="#64748b" />
+          </View>
+          <Text className="text-neutral-700 font-medium text-center mb-1">
+            {Platform.OS === 'web' ? 'Drag and drop your video here' : 'Tap to select a video'}
+          </Text>
+          <Text className="text-neutral-500 text-sm text-center mb-2">
+            {Platform.OS === 'web' ? 'or click to browse' : 'from your device'}
+          </Text>
+          <Text className="text-neutral-400 text-xs text-center">
+            Supported formats: MP4, MOV, AVI, WebM (Max 500MB)
+          </Text>
+        </>
+      )}
+      </Pressable>
+    </div>
+  ) : (
     <Pressable
-      className={`border-2 border-dashed rounded-xl p-8 items-center justify-center ${selectedFile ? "border-primary-500 bg-primary-50" : "border-neutral-300 bg-neutral-50"
+      className={`border-2 border-dashed rounded-xl p-8 items-center justify-center ${
+        selectedFile
+          ? "border-primary-500 bg-primary-50"
+          : "border-neutral-300 bg-neutral-50"
         } ${isUploading ? "opacity-50" : ""}`}
       onPress={handleFilePick}
       disabled={isUploading}
@@ -164,10 +327,10 @@ export default function UploadScreen() {
             <Upload size={24} color="#64748b" />
           </View>
           <Text className="text-neutral-700 font-medium text-center mb-1">
-            Drag and drop your video here
+            Tap to select a video
           </Text>
           <Text className="text-neutral-500 text-sm text-center mb-2">
-            or click to browse
+            from your device
           </Text>
           <Text className="text-neutral-400 text-xs text-center">
             Supported formats: MP4, MOV, AVI, WebM (Max 500MB)
@@ -379,7 +542,7 @@ export default function UploadScreen() {
                   <Text className="text-neutral-500 text-sm mb-3">
                     Supported formats: MP4, MOV, AVI, WebM (Max 500MB)
                   </Text>
-                  <UploadZone />
+                  {uploadZoneContent}
                 </View>
 
                 <LanguageSelection />
@@ -400,7 +563,7 @@ export default function UploadScreen() {
           // Mobile: Single column layout
           <View className="px-4">
             <View className="mb-6">
-              <UploadZone />
+              {uploadZoneContent}
             </View>
 
             <LanguageSelection />

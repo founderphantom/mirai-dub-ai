@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.miraidub.ai"
+      "bundleIdentifier": "com.miraichat.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#3b82f6"
       },
-      "package": "com.miraidub.ai"
+      "package": "com.miraichat.app"
     },
     "web": {
       "bundler": "metro",

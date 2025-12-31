@@ -83,17 +83,11 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
             emailDomainName: "anonymous.miraidub.ai",
             disableDeleteAnonymousUser: true, // Preserve user data (videos, credits, transactions)
             onLinkAccount: async (params) => {
-              // Log params structure for debugging
-              console.log("[Better Auth] onLinkAccount called");
-
               const db = drizzle(env.DB, { schema });
 
               // Access the correct path: params.newUser.user.id and params.anonymousUser.user.id
               const newUserId = params?.newUser?.user?.id;
               const anonymousUserId = params?.anonymousUser?.user?.id;
-
-              console.log("[Better Auth] Anonymous user ID:", anonymousUserId);
-              console.log("[Better Auth] New user ID:", newUserId);
 
               if (!newUserId) {
                 console.error("[Better Auth] onLinkAccount: Could not determine new user ID");
@@ -112,9 +106,6 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
 
                   if (anonymousUser) {
                     trialVideosUsed = anonymousUser.trialVideosUsed || 0;
-                    console.log("[Better Auth] Transferring trial data from anonymous user:", {
-                      trialVideosUsed,
-                    });
                   }
                 }
 
@@ -139,13 +130,6 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
                   })
                   .where(eq(schema.users.id, newUserId))
                   .execute();
-
-                console.log("[Better Auth] Successfully linked account:", {
-                  newUserId,
-                  trialVideosUsed,
-                  unusedTrialVideos,
-                  bonusVideosAvailable: totalBonusVideos,
-                });
               } catch (error) {
                 console.error("[Better Auth] Error in onLinkAccount:", error);
                 // Don't throw - let Better Auth complete the link
@@ -162,12 +146,9 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
           user: {
             create: {
               before: async (user) => {
-                // Debug: Log when hook is triggered
-                console.log("[Better Auth Hook] Creating user:", user.id, user.email);
                 return { data: user };
               },
               after: async (user) => {
-                console.log("[Better Auth Hook] User created, now setting custom fields:", user.id);
 
                 const db = drizzle(env.DB, { schema });
 
@@ -190,8 +171,6 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
                     })
                     .where(eq(schema.users.id, user.id))
                     .execute();
-
-                  console.log("[Better Auth Hook] Custom fields set for user:", user.id, { isAnonymous, bonusVideos });
                 } catch (error) {
                   console.error("[Better Auth Hook] Error setting custom fields:", error);
                 }
@@ -228,8 +207,10 @@ export function createAuth(env: CloudflareBindings, cf?: Record<string, unknown>
           "https://miraichat.app",
           "https://www.miraichat.app",
           "https://appleid.apple.com",
-          "http://localhost:8081",
-          "http://localhost:19000",
+          ...(env.ENVIRONMENT === "development"
+            ? ["http://localhost:8081", "http://localhost:19000"]
+            : []
+          ),
         ],
 
         // Advanced settings for mobile app support

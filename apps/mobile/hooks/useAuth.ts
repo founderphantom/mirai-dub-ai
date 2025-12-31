@@ -147,8 +147,6 @@ export function useConvertAccount() {
 
   return useMutation({
     mutationFn: async (data: ConvertAccountData) => {
-      console.log("[Convert Account] Starting conversion for anonymous user");
-
       // Use signUp.email() - Better Auth automatically detects anonymous session
       // and triggers onLinkAccount callback to link the accounts
       const result = await authClient.signUp.email({
@@ -156,8 +154,6 @@ export function useConvertAccount() {
         password: data.password,
         name: data.name,
       });
-
-      console.log("[Convert Account] Result:", JSON.stringify(result, null, 2));
 
       if (result.error) {
         console.error("[Convert Account] Error:", result.error);
@@ -171,7 +167,6 @@ export function useConvertAccount() {
       return result.data;
     },
     onSuccess: async () => {
-      console.log("[Convert Account] Account converted successfully");
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.user });
       router.replace("/home");
     },

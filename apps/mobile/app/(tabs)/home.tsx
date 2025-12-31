@@ -328,28 +328,6 @@ export default function HomeScreen() {
         {/* Footer */}
         <Footer />
       </ScrollView>
-
-      {/* TODO: REMOVE BEFORE PRODUCTION - Dev Reset Button */}
-      <View className="absolute bottom-6 left-0 right-0 items-center">
-        <Pressable
-          className="bg-neutral-900/10 px-4 py-2 rounded-full"
-          onPress={async () => {
-            const { useAuthStore } = await import("@/stores/authStore");
-            const { authClient } = await import("@/lib/api/auth");
-
-            // Clear local state
-            useAuthStore.getState().reset();
-
-            // Sign out
-            await authClient.signOut();
-
-            // Reload app (using expo-updates would be better but this works for now)
-            alert("App reset. Please restart the app.");
-          }}
-        >
-          <Text className="text-xs text-neutral-500 font-medium">Dev: Reset App & Onboarding</Text>
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }

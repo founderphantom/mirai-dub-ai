@@ -18,26 +18,20 @@ export default function Index() {
     const initAuth = async () => {
       // Wait for session to load
       if (isSessionLoading) {
-        console.log("[Auth Init] Session loading...");
         return;
       }
 
       // If already authenticated, mark as initialized
       if (isAuthenticated) {
-        console.log("[Auth Init] Already authenticated, skipping anonymous sign-in");
-        console.log("[Auth Init] Session:", JSON.stringify(session, null, 2));
-        console.log("[Auth Init] Cookies:", authClient.getCookie());
         setInitialized(true);
         return;
       }
 
       // If onboarding completed but not authenticated, try anonymous sign-in once
       if (hasCompletedOnboarding && !isAuthenticated && !isSigningIn && !hasAttemptedAnonymous) {
-        console.log("[Auth Init] Attempting anonymous sign-in...");
         setHasAttemptedAnonymous(true);
         try {
-          const result = await signInAnonymous();
-          console.log("[Auth Init] Anonymous sign-in successful:", result);
+          await signInAnonymous();
         } catch (error) {
           console.error("[Auth Init] Anonymous sign-in failed:", error);
           // Silent fail - anonymous sign-in is optional
@@ -46,7 +40,6 @@ export default function Index() {
           setInitialized(true);
         }
       } else if (!hasCompletedOnboarding) {
-        console.log("[Auth Init] Onboarding not completed");
         // If onboarding not completed, mark as initialized so we can show onboarding
         setInitialized(true);
       }

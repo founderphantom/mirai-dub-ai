@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Modal,
   FlatList,
   TextInput,
+  Platform,
   type ViewProps,
 } from "react-native";
 import { ChevronDown, Check, Search, X } from "lucide-react-native";
@@ -71,6 +72,13 @@ export function LanguagePicker({
     setSearchQuery("");
   };
 
+  // Stop click propagation on web to prevent backdrop from closing modal
+  const handleContentClick = useCallback((e: any) => {
+    if (Platform.OS === 'web') {
+      e.stopPropagation();
+    }
+  }, []);
+
   return (
     <View className={className} {...props}>
       {label && (
@@ -126,6 +134,7 @@ export function LanguagePicker({
             className="bg-white rounded-t-2xl"
             style={{ maxHeight: "80%" }}
             onStartShouldSetResponder={() => true}
+            {...(Platform.OS === 'web' ? { onClick: handleContentClick } : {})}
           >
             {/* Header */}
             <View className="flex-row items-center justify-between p-4 border-b border-neutral-200">

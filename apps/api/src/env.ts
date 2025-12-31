@@ -36,6 +36,7 @@ export interface CloudflareBindings {
   POLAR_ACCESS_TOKEN: string;
   POLAR_WEBHOOK_SECRET: string;
   REPLICATE_API_TOKEN: string;
+  REPLICATE_WEBHOOK_SIGNING_SECRET: string;
   R2_PUBLIC_URL: string;
 
   // OAuth providers

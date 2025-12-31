@@ -32,7 +32,6 @@ authRoutes.get("/me", requireAuth, async (c) => {
 
     // Reconciliation: Auto-fix users who linked email but didn't get bonus due to callback failure
     if (dbUser.isAnonymous && dbUser.email && !dbUser.email.endsWith("@anonymous.miraidub.ai")) {
-      console.log("[RECONCILIATION] Fixing user who linked but isAnonymous flag still true:", dbUser.id);
       await db
         .update(users)
         .set({
@@ -74,27 +73,6 @@ authRoutes.get("/me", requireAuth, async (c) => {
     return c.json(formatErrorResponse(error), 500);
   }
 });
-
-/**
- * POST /api/auth/convert
- * @deprecated Use Better Auth's authClient.anonymous.linkEmail() instead
- * This endpoint is deprecated and will be removed in a future release.
- */
-authRoutes.post(
-  "/convert",
-  requireAuth,
-  zValidator("json", convertAccountSchema),
-  async (c) => {
-    console.warn("[DEPRECATED] /api/auth/convert endpoint called. Use authClient.anonymous.linkEmail() instead.");
-
-    const error = createError(
-      ErrorCodes.INVALID_REQUEST,
-      undefined,
-      "This endpoint is deprecated. Please update your client to use authClient.anonymous.linkEmail()"
-    );
-    return c.json(formatErrorResponse(error), 410); // 410 Gone
-  }
-);
 
 /**
  * Forward all Better Auth routes

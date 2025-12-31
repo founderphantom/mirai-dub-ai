@@ -139,11 +139,22 @@ webhookRoutes.post("/replicate", async (c) => {
   const db = createDb(c.env.DB);
 
   try {
-    // Validate webhook signature (if provided by Replicate)
-    const signature = c.req.header("webhook-signature");
+    // Validate webhook signature
+    const webhookId = c.req.header("webhook-id") || "";
+    const webhookTimestamp = c.req.header("webhook-timestamp") || "";
+    const webhookSignature = c.req.header("webhook-signature") || "";
     const body = await c.req.text();
+    const secret = c.env.REPLICATE_WEBHOOK_SIGNING_SECRET;
 
-    if (!validateReplicateWebhook(body, signature)) {
+    const isValid = await validateReplicateWebhook(
+      webhookId,
+      webhookTimestamp,
+      webhookSignature,
+      body,
+      secret
+    );
+
+    if (!isValid) {
       console.error("Invalid Replicate webhook signature");
       return c.json({ error: "Invalid signature" }, 401 as ContentfulStatusCode);
     }
