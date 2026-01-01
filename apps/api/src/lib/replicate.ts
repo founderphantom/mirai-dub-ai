@@ -338,19 +338,25 @@ export async function validateReplicateWebhook(
 
   try {
     // Extract the secret (remove 'whsec_' prefix if present)
-    const secretKey = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+    const secretBase64 = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+
+    // Decode the base64 secret to get the raw bytes
+    const secretDecoded = atob(secretBase64);
+    const secretBytes = new Uint8Array(secretDecoded.length);
+    for (let i = 0; i < secretDecoded.length; i++) {
+      secretBytes[i] = secretDecoded.charCodeAt(i);
+    }
 
     // Construct signed content: webhook-id.webhook-timestamp.body
     const signedContent = `${webhookId}.${webhookTimestamp}.${body}`;
 
     // Generate expected signature using HMAC-SHA256
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(secretKey);
     const messageData = encoder.encode(signedContent);
 
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      keyData,
+      secretBytes,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']

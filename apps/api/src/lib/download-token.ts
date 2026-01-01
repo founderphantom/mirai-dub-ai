@@ -4,6 +4,27 @@
  */
 
 /**
+ * Convert standard base64 to URL-safe base64
+ * Replaces + with -, / with _, and removes padding
+ */
+function toUrlSafeBase64(base64: string): string {
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Convert URL-safe base64 back to standard base64
+ * Replaces - with +, _ with /, and adds padding
+ */
+function fromUrlSafeBase64(urlSafe: string): string {
+  let base64 = urlSafe.replace(/-/g, '+').replace(/_/g, '/');
+  // Add padding if needed
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  return base64;
+}
+
+/**
  * Generate a signed download token
  * @param videoId - The video ID to download
  * @param userId - The user who owns the video
@@ -26,11 +47,12 @@ export async function generateDownloadToken(
     exp: Math.floor(expiresAt.getTime() / 1000),
   };
 
-  // Encode payload as base64
+  // Encode payload as URL-safe base64
   const payloadJson = JSON.stringify(payload);
-  const payloadBase64 = btoa(payloadJson);
+  const payloadBase64 = toUrlSafeBase64(btoa(payloadJson));
 
   // Create signature using Web Crypto API
+  // Sign the URL-safe payload (what will be in the token)
   const encoder = new TextEncoder();
   const data = encoder.encode(payloadBase64);
   const keyData = encoder.encode(secret);
@@ -44,9 +66,9 @@ export async function generateDownloadToken(
   );
 
   const signature = await crypto.subtle.sign("HMAC", cryptoKey, data);
-  const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const signatureBase64 = toUrlSafeBase64(btoa(String.fromCharCode(...new Uint8Array(signature))));
 
-  // Combine payload and signature
+  // Combine payload and signature (both URL-safe)
   const token = `${payloadBase64}.${signatureBase64}`;
 
   return {
@@ -72,7 +94,7 @@ export async function validateDownloadToken(
       return null;
     }
 
-    // Verify signature
+    // Verify signature using URL-safe payload (same as what was signed)
     const encoder = new TextEncoder();
     const data = encoder.encode(payloadBase64);
     const keyData = encoder.encode(secret);
@@ -85,15 +107,19 @@ export async function validateDownloadToken(
       ["verify"]
     );
 
-    const signature = Uint8Array.from(atob(signatureBase64), (c) => c.charCodeAt(0));
-    const isValid = await crypto.subtle.verify("HMAC", cryptoKey, signature, data);
+    // Convert URL-safe base64 back to standard for atob()
+    const signatureBytes = Uint8Array.from(
+      atob(fromUrlSafeBase64(signatureBase64)),
+      (c) => c.charCodeAt(0)
+    );
+    const isValid = await crypto.subtle.verify("HMAC", cryptoKey, signatureBytes, data);
 
     if (!isValid) {
       return null;
     }
 
-    // Decode payload
-    const payloadJson = atob(payloadBase64);
+    // Decode payload (convert URL-safe base64 back to standard for atob())
+    const payloadJson = atob(fromUrlSafeBase64(payloadBase64));
     const payload = JSON.parse(payloadJson);
 
     // Check expiration
